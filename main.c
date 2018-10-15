@@ -9,13 +9,7 @@
 
 // Possible addition is user settings to change mode.
 
-void Sensor1(void){
-
-}
-
-void Sensor2(void){
-
-}
+// Sensor function already in cinterface.h header
 
 void MotorController(void){
 
@@ -33,5 +27,5 @@ void Settings(void){
 }
 
 void Main(void){
-
+  // Loop, checking settings and sensors
 }
