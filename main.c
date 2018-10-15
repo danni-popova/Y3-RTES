@@ -7,6 +7,8 @@
 #include <taskLib.h>
 #include <stdlib.h>
 
+// Possible addition is user settings to change mode.
+
 void Sensor1(void){
 
 }
@@ -19,8 +21,15 @@ void MotorController(void){
 
 }
 
-void Feedback(LargeBlockCount, SmallBlockCount){
+void Feedback(LargeBlockDetect, SmallBlockDetect, LargeBlockCount){
+  // User interface that returns number of large blocks detected,
+  // snall blocks detected and large blocks collected.
+  // Includes error catching and shutdown option.
+  // Shutdown option may need to be an interrupt to override operations.
+}
 
+void Settings(void){
+  // Initial settings that can be altered by the user
 }
 
 void Main(void){
