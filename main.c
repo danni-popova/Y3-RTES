@@ -23,7 +23,7 @@ void Settings(void){
   // Initial settings that can be altered by the user
 }
 
-void CheckSensor(char State){
+void CheckSensor(char State, char LastState){
   // Check sensors and Count operation
   // Sensors will cycle through State 0, 1, 2 if small block
   // Sensors will cycle through State 0, 1, 3, 2 if large block
@@ -35,8 +35,9 @@ void CheckSensor(char State){
   char stateconveyor0 = readSizeSensors(0);
   char stateconveyor1 = readSizeSensors(1);
   // Put data into an array and compare with previous State. Flip State change
-  // to 0 if identical. Save previous State.
-  strncpy(char LastState[], State, 6);
+  // to 0 if identical.
+  // Save previous State.
+  strncpy(char LastState, State, 6);
   // return array of 6 characters
 }
 
@@ -60,11 +61,12 @@ void Main(void){
   // 0 is null or no State change
   // Initialise State to 0
   unsigned char State[6] = {0, 0, 0, 0, 0, 0};
+  unsigned char LastState[6] = {0, 0, 0, 0, 0, 0};
   startMotor(); // startMotor function from cinterface.h
   while(1){
     Settings();
     // Update current State
-    State = CheckSensor(State);
+    State = CheckSensor(State, LastState);
     // If there is a State change then Motor is used.
     if (State[0] == 1){
       MotorController();
