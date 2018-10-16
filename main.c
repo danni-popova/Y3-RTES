@@ -27,7 +27,16 @@ void CheckSensor(char CountConveyor1, char ObjectSizeConveyor1){
   // Check sensors and Count operation
   // Sensors will cycle through state 0, 1, 2 if small block
   // Sensors will cycle through state 0, 1, 3, 2 if large block
-  readSizeSensors(char conveyor);
+
+  // readSizeSensors returns 0, 1, 2, 3 for no object, sensor 1, sensor 2, and
+  // sensor 1 & 2, respectively.
+  // The conveyor parameter distinguishes which conveyor is being checked.
+  // Input is either 0 or 1.
+  char conveyor = 0;
+  char stateconveyor0 = readSizeSensors(char conveyor);
+  ~ conveyor;
+  char stateconveyor1 = readSizeSensors(char conveyor);
+  // return array of 6 characters
 }
 
 void MotorController(void){
@@ -44,11 +53,18 @@ void Feedback(LargeBlockDetectConveyor1, SmallBlockDetectConveyor1,
 }
 
 void Main(void){
+  // char state buffer holds conveyor info.
+  // state change | conveyor | state conveyor 1| state conveyor 2 |
+  // count conveyor 1 | count conveyor 2
+  char state[6] = {};
   startMotor(); // startMotor function from cinterface.h
   while(1){
     Settings();
-    CheckSensor();
-    MotorController();
+    state = CheckSensor();
+    // If there is a state change then Motor is used.
+    if (state){
+      MotorController();
+    }
     Feedback();
   }
 }
