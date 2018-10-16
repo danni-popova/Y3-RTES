@@ -6,13 +6,19 @@
 #include <vxWorks.h>
 #include <taskLib.h>
 #include <stdlib.h>
+#include <ioLib.h>
 
 // Possible addition is user settings to change mode.
+void Settings(void){
+  // Initial settings that can be altered by the user
+}
 
-// Sensor function already in cinterface.h header
+void CheckSensor(void){
+  // Check sensors and Count operation
+}
 
 void MotorController(void){
-
+  // Gate controller operation controls both gates
 }
 
 void Feedback(LargeBlockDetect, SmallBlockDetect, LargeBlockCount){
@@ -22,10 +28,10 @@ void Feedback(LargeBlockDetect, SmallBlockDetect, LargeBlockCount){
   // Shutdown option may need to be an interrupt to override operations.
 }
 
-void Settings(void){
-  // Initial settings that can be altered by the user
-}
-
 void Main(void){
   // Loop, checking settings and sensors
+  // Settings
+  // CheckSensor
+  // MotorController
+  // Feedback
 }
