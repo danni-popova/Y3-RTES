@@ -23,6 +23,23 @@ void Settings(void){
   // Initial settings that can be altered by the user
 }
 
+void BLockCount(char BlockSize, char BlockBuffer, char LargeBlockCount, char SmallBlockCount){
+  if (BlockSize == 1){
+    BlockBuffer = 1;
+    }
+  if (BlockBuffer == 1){
+    switch (BlockSize){
+      case 0: printf("Error: Block has been removed from belt");
+      // Reset?
+      case 1: printf("Error: Conveyor belt motor has stopped");
+      case 2: SmallBlockCount = SmallBlockCount + 1;
+      case 3: LargeBlockCount = LargeBlockCount + 1;
+      default: printf("Error: Block size unknown!");
+    }
+  }
+  return LargeBlockCount, SmallBlockCount;
+}
+
 char CompareBuffers(char State[], char LastState[]){
   for(char i=1; i<5; i++) {     // Iterate through State buffers from 1 to 5
     if(State[i] != LasteState[i]) {
@@ -35,26 +52,47 @@ char CompareBuffers(char State[], char LastState[]){
 
 void CheckSensor(char State[], char LastState[]){
   // Check sensors and Count operation
-  // Sensors will cycle through State 0, 1, 2 if small block
-  // Sensors will cycle through State 0, 1, 3, 2 if large block
+  // Sensors will cycle through State 1, 2 if small block
+  // Sensors will cycle through State 1, 3, 2 if large block
 
   // If reset is true, reset buffers
   if State[5] == 1{
     State[] = {0, 0, 0, 0, 0, 0};
-    unsigned char LastState[] = {0, 0, 0, 0, 0, 0, 0};
+    unsigned char LastState[] = {0, 0, 0, 0, 0, 0};
+    unsigned char LargeBlockCount0 = 0;
+    unsigned char SmallBlockCount0 = 0;
+    unsigned char LargeBlockCount1 = 0;
+    unsigned char SmallBlockCount1 = 0;
+    unsigned char BlockBuffer0 = 0;
+    unsigned char BlockBuffer1 = 0;
   }
   // readSizeSensors returns 0, 1, 2, 3 for no object, sensor 1, sensor 2, and
   // sensor 1 & 2, respectively.
   // The conveyor parameter distinguishes which conveyor is being checked.
   // Input is either 0 or 1.
-  char State[1] = readSizeSensors(0);
-  char State[2] = readSizeSensors(1);
+  char BlockSize0 = readSizeSensors(0);
+  char BlockSize1 = readSizeSensors(1);
+
+  // Update block count if object is detected. Only perform this if an object is present.
+  if (BlockSize0 != 0){
+    LargeBlockCount0, SmallBlockCount0 = BlockCount(char BlockSize0, char BlockBuffer0, char LargeBlockCount0, char SmallBlockCount0);
+  }
+  if (BlockSize1 !=0){
+    LargeBlockCount1, SmallBlockCount1 = BlockCount(char BlockSize1, char BlockBuffer1, char LargeBlockCount1, char SmallBlockCount1);
+  }
+
+  State[1] = LargeBlockCount0;
+  State[2] = SmallBlockCount0;
+  State[3] = LargeBlockCount1;
+  State[4] = SmallBlockCount1;
+
   // Put data into an array and compare with previous State. Flip State change
   // to 0 if identical.
   State[0] = CompareBuffers(char State[], char LastState[])
   // Save previous State.
   strncpy(char LastState, State, 6);
   // return array of 6 characters
+  return State[];
 }
 
 void MotorController(void){
@@ -72,8 +110,8 @@ void Feedback(LargeBlockDetectConveyor1, SmallBlockDetectConveyor1,
 
 void Main(void){
   // char State buffer holds conveyor info.
-  // State change | State conveyor 1 | State conveyor 2 |
-  // count conveyor 1 | count conveyor 2 | initialise or reset
+  // State change | Large block count conveyor 1 | Small block count conveyor 1 |
+  // Large block count conveyor 2 | Small block count conveyor 2 | Reset
   // 0 is null or no State change
   // Initialise State buffer to 0
   unsigned char State[] = {0, 0, 0, 0, 0, 1};
