@@ -23,7 +23,7 @@ void Settings(void){
   // Initial settings that can be altered by the user
 }
 
-void BLockCount(char BlockSize, char BlockBuffer, char LargeBlockCount, char SmallBlockCount){
+void BlockCount(char BlockSize, char BlockBuffer, char LargeBlockCount, char SmallBlockCount){
   if (BlockSize == 1){
     BlockBuffer = 1;
     }
@@ -36,8 +36,9 @@ void BLockCount(char BlockSize, char BlockBuffer, char LargeBlockCount, char Sma
       case 3: LargeBlockCount = LargeBlockCount + 1;
       default: printf("Error: Block size unknown!");
     }
+    BlockBuffer = 0;
   }
-  return LargeBlockCount, SmallBlockCount;
+  return LargeBlockCount, SmallBlockCount, BlockBuffer;
 }
 
 char CompareBuffers(char State[], char LastState[]){
@@ -75,10 +76,10 @@ void CheckSensor(char State[], char LastState[]){
 
   // Update block count if object is detected. Only perform this if an object is present.
   if (BlockSize0 != 0){
-    LargeBlockCount0, SmallBlockCount0 = BlockCount(char BlockSize0, char BlockBuffer0, char LargeBlockCount0, char SmallBlockCount0);
+    LargeBlockCount0, SmallBlockCount0, BlockBuffer0 = BlockCount(char BlockSize0, char BlockBuffer0, char LargeBlockCount0, char SmallBlockCount0);
   }
   if (BlockSize1 !=0){
-    LargeBlockCount1, SmallBlockCount1 = BlockCount(char BlockSize1, char BlockBuffer1, char LargeBlockCount1, char SmallBlockCount1);
+    LargeBlockCount1, SmallBlockCount1, BlockBuffer1 = BlockCount(char BlockSize1, char BlockBuffer1, char LargeBlockCount1, char SmallBlockCount1);
   }
 
   State[1] = LargeBlockCount0;
