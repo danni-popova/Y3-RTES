@@ -47,9 +47,9 @@ char CompareBuffers(char State[], char LastState[]){
     if(State[i] != LasteState[i]) {
       return i;
     }
-     // State has not changed
-     return 0;
   }
+  // State has not changed
+  return 0;
 }
 
 void CheckSensor(char State[], char LastState[]){
