@@ -43,9 +43,9 @@ void BlockCount(char BlockSize, char BlockBuffer, char LargeBlockCount,
 }
 
 char CompareBuffers(char State[], char LastState[]){
-  for(char i=1; i<5; i++) {     // Iterate through State buffers from 1 to 5
+  for(char i=1; i<4; i++) {     // Iterate through State buffers from 1 to 4
     if(State[i] != LasteState[i]) {
-      return 1;
+      return i;
     }
      // State has not changed
      return 0;
@@ -59,8 +59,8 @@ void CheckSensor(char State[], char LastState[]){
 
   // If reset is true, reset buffers
   if State[5] == 1{
-    State[] = {0, 0, 0, 0, 0, 0};
-    unsigned char LastState[] = {0, 0, 0, 0, 0, 0};
+    State[] = {0, 0, 0, 0, 0, 0, 0};
+    unsigned char LastState[] = {0, 0, 0, 0, 0, 0, 0};
     unsigned char LargeBlockCount0 = 0;
     unsigned char SmallBlockCount0 = 0;
     unsigned char LargeBlockCount1 = 0;
@@ -89,13 +89,14 @@ void CheckSensor(char State[], char LastState[]){
                                                                   char SmallBlockCount1);
   }
 
-  State[1] = LargeBlockCount0;
+  State[1] = LargeBlockCount0; // 0 == conveyor 1
   State[2] = SmallBlockCount0;
-  State[3] = LargeBlockCount1;
+  State[3] = LargeBlockCount1; // 1 == conveyor 2
   State[4] = SmallBlockCount1;
 
   // Put data into an array and compare with previous State. Flip State change
-  // to 0 if identical.
+  // to 0 if identical. Otehrwse State will define small/large block passing and
+  // which conveyor.
   State[0] = CompareBuffers(char State[], char LastState[])
   // Save previous State.
   strncpy(char LastState, State, 6);
@@ -106,7 +107,7 @@ void CheckSensor(char State[], char LastState[]){
 void MotorController(char State[]){
   // Gate controller operation controls both gates
   // Return number of Large Blocks sorted
-  setGates(char State);
+  setGates(char INPUT);
 }
 
 void Feedback(LargeBlockDetectConveyor1, SmallBlockDetectConveyor1,
@@ -131,7 +132,7 @@ void Main(void){
     // Update current State
     State[] = CheckSensor(char State[], char LastState[]);
     // If there is a State change then Motor is used.
-    if (State[0] == 1){
+    if (State[0] != 0){
       MotorController(char State[]);
     }
     // Should Feedback be in conditional statement or not?
