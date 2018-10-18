@@ -23,7 +23,8 @@ void Settings(void){
   // Initial settings that can be altered by the user
 }
 
-void BlockCount(char BlockSize, char BlockBuffer, char LargeBlockCount, char SmallBlockCount){
+void BlockCount(char BlockSize, char BlockBuffer, char LargeBlockCount,
+                char SmallBlockCount){
   if (BlockSize == 1){
     BlockBuffer = 1;
     }
@@ -76,10 +77,16 @@ void CheckSensor(char State[], char LastState[]){
 
   // Update block count if object is detected. Only perform this if an object is present.
   if (BlockSize0 != 0){
-    LargeBlockCount0, SmallBlockCount0, BlockBuffer0 = BlockCount(char BlockSize0, char BlockBuffer0, char LargeBlockCount0, char SmallBlockCount0);
+    LargeBlockCount0, SmallBlockCount0, BlockBuffer0 = BlockCount(char BlockSize0,
+                                                                  char BlockBuffer0,
+                                                                  char LargeBlockCount0,
+                                                                  char SmallBlockCount0);
   }
   if (BlockSize1 !=0){
-    LargeBlockCount1, SmallBlockCount1, BlockBuffer1 = BlockCount(char BlockSize1, char BlockBuffer1, char LargeBlockCount1, char SmallBlockCount1);
+    LargeBlockCount1, SmallBlockCount1, BlockBuffer1 = BlockCount(char BlockSize1,
+                                                                  char BlockBuffer1,
+                                                                  char LargeBlockCount1,
+                                                                  char SmallBlockCount1);
   }
 
   State[1] = LargeBlockCount0;
@@ -96,8 +103,9 @@ void CheckSensor(char State[], char LastState[]){
   return State[];
 }
 
-void MotorController(void){
+void MotorController(char State[]){
   // Gate controller operation controls both gates
+  // Return number of Large Blocks sorted
   setGates(char State);
 }
 
@@ -121,10 +129,10 @@ void Main(void){
   while(1){
     Settings();
     // Update current State
-    State = CheckSensor(State[], LastState[]);
+    State[] = CheckSensor(char State[], char LastState[]);
     // If there is a State change then Motor is used.
     if (State[0] == 1){
-      MotorController();
+      MotorController(char State[]);
     }
     // Should Feedback be in conditional statement or not?
     Feedback();
