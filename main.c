@@ -59,8 +59,8 @@ void CheckSensor(char State[], char LastState[]){
 
   // If reset is true, reset buffers
   if State[5] == 1{
-    State[] = {0, 0, 0, 0, 0, 0, 0};
-    unsigned char LastState[] = {0, 0, 0, 0, 0, 0, 0};
+    State[] = {0, 0, 0, 0, 0, 0};
+    unsigned char LastState[] = {0, 0, 0, 0, 0, 0};
     unsigned char LargeBlockCount0 = 0;
     unsigned char SmallBlockCount0 = 0;
     unsigned char LargeBlockCount1 = 0;
@@ -101,12 +101,13 @@ void CheckSensor(char State[], char LastState[]){
   // Save previous State.
   strncpy(char LastState, State, 6);
   // return array of 6 characters
-  return State[];
+  return State[], LastState[];
 }
 
-void MotorController(char State[]){
+void MotorController(char State[], char LastState[]){
   // Gate controller operation controls both gates
   // Return number of Large Blocks sorted
+  // Use count sensor to adjust when to close the gate?
   setGates(char INPUT);
 }
 
@@ -130,10 +131,10 @@ void Main(void){
   while(1){
     Settings();
     // Update current State
-    State[] = CheckSensor(char State[], char LastState[]);
+    State[], LastState[] = CheckSensor(char State[], char LastState[]);
     // If there is a State change then Motor is used.
     if (State[0] != 0){
-      MotorController(char State[]);
+      MotorController(char State[], LastState[]);
     }
     // Should Feedback be in conditional statement or not?
     Feedback();
