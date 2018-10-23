@@ -22,6 +22,7 @@
 void Settings(void){
   // Initial settings that can be altered by the user
 }
+void Interface(void){}
 
 void BlockCount(char BlockSize, char BlockBuffer, char LargeBlockCount,
                 char SmallBlockCount){
@@ -44,11 +45,10 @@ void BlockCount(char BlockSize, char BlockBuffer, char LargeBlockCount,
 
 char CompareBuffers(char State[], char LastState[]){
   for(char i=1; i<4; i++) {     // Iterate through State buffers from 1 to 4
-    if(State[i] != LasteState[i]) {
-      return i;
+    if(State[i] != LasteState[i]){
+
     }
   }
-  // State has not changed
   return 0;
 }
 
@@ -72,6 +72,8 @@ void CheckSensor(char State[], char LastState[]){
   // sensor 1 & 2, respectively.
   // The conveyor parameter distinguishes which conveyor is being checked.
   // Input is either 0 or 1.
+
+  // Reset sensor before use
   char BlockSize0 = readSizeSensors(0);
   char BlockSize1 = readSizeSensors(1);
 
@@ -94,9 +96,7 @@ void CheckSensor(char State[], char LastState[]){
   State[3] = LargeBlockCount1; // 1 == conveyor 2
   State[4] = SmallBlockCount1;
 
-  // Put data into an array and compare with previous State. Flip State change
-  // to 0 if identical. Otehrwse State will define small/large block passing and
-  // which conveyor.
+  // State is 1 if there is a change. May change this to MotorController input
   State[0] = CompareBuffers(char State[], char LastState[])
   // Save previous State.
   strncpy(char LastState, State, 6);
@@ -126,6 +126,7 @@ void Main(void){
   // Initialise State buffer to 0
   unsigned char State[] = {0, 0, 0, 0, 0, 1};
   unsigned char LastState[] = {0, 0, 0, 0, 0, 0};
+  Interface();
   startMotor(); // startMotor function from cinterface.h
   while(1){
     Settings();
