@@ -111,12 +111,28 @@ void MotorController(char State[], char LastState[]){
   setGates(char INPUT);
 }
 
-void Feedback(LargeBlockDetectConveyor1, SmallBlockDetectConveyor1,
-              LargeBlockCountConveyor1){
+void Feedback(char State[], SensorBlockCount0, SensorBlockCount1){
   // User interface that returns number of large blocks detected,
   // snall blocks detected and large blocks collected.
   // Includes error catching and shutdown option.
   // Shutdown option may need to be an interrupt to override operations.
+  if (State[5] == 1){ // If reset is true
+    SensorBlockCount0 = 0;
+    SensorBlockCount1 = 0;
+  }
+  if (readCountSensor(0)==1){
+    SensorBlockCount0++;
+    printf("Conveyor 1: Number of counted blocks by sensor: %c", SensorBlockCount0);
+    printf("Conveyor 1: Number of large blocks detected: %c", State[1]);
+    printf("Conveyor 1: Number of small blocks detected: %c", State[2]);
+  }
+  if (readCountSensor(1)==1){
+    SensorBlockCount1++;
+    printf("Conveyor 2: Number of counted blocks: %c", SensorBlockCount1);
+    printf("Conveyor 2: Number of large blocks detected: %c", State[3]);
+    printf("Conveyor 2: Number of small block detected: %c", State[4]);
+  }
+  return SensorBlockCount0, SensorBlockCount1;
 }
 
 void Main(void){
@@ -127,6 +143,8 @@ void Main(void){
   // Initialise State buffer to 0
   unsigned char State[] = {0, 0, 0, 0, 0, 1};
   unsigned char LastState[] = {0, 0, 0, 0, 0, 0};
+  unsigned char SensorBlockCount0;
+  unsigned char SensorBlockCount1;
   startMotor(); // startMotor function from cinterface.h
   while(1){
     Settings();
@@ -137,6 +155,8 @@ void Main(void){
       MotorController(char State[], LastState[]);
     }
     // Should Feedback be in conditional statement or not?
-    Feedback();
+    SensorBlockCount0, SensorBlockCount1 = Feedback(char State[],
+                                                    char SensorBlockCount0,
+                                                    char SensorBlockCount1);
   }
 }
