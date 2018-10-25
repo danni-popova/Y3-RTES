@@ -49,10 +49,10 @@ void CheckSensor(){
     char BlockSize0 = readSizeSensors(0);
     char BlockSize1 = readSizeSensors(1);
     if (BlockSize0 != 0){
-      // Update Conveyor 1 flag or message
+      // Update Conveyor 1 flag or send a message - Pass a full array of info
     }
     else if (BlockSize1 != 0){
-      // Update Conveyor 2 flag or message
+      // Update Conveyor 2 flag or send a message - Pass a full array of info
     }
   }
 }
