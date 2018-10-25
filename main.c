@@ -52,66 +52,20 @@ char CompareBuffers(char State[], char LastState[]){
   return 0;
 }
 
-void CheckSensor(char State[], char LastState[]){
-  // Check sensors and Count operation
-  // Sensors will cycle through State 1, 2 if small block
-  // Sensors will cycle through State 1, 3, 2 if large block
-
-  // If reset is true, reset buffers
-  if State[5] == 1{
-    State[] = {0, 0, 0, 0, 0, 0, 0};
-    unsigned char LastState[] = {0, 0, 0, 0, 0, 0, 0};
-    unsigned char LargeBlockCount0 = 0;
-    unsigned char SmallBlockCount0 = 0;
-    unsigned char LargeBlockCount1 = 0;
-    unsigned char SmallBlockCount1 = 0;
-    unsigned char BlockBuffer0 = 0;
-    unsigned char BlockBuffer1 = 0;
-  }
-  // readSizeSensors returns 0, 1, 2, 3 for no object, sensor 1, sensor 2, and
-  // sensor 1 & 2, respectively.
-  // The conveyor parameter distinguishes which conveyor is being checked.
-  // Input is either 0 or 1.
+void CheckSensor(){
 
   // Reset sensor before use
   char BlockSize0 = readSizeSensors(0);
   char BlockSize1 = readSizeSensors(1);
-
-  // Update block count if object is detected. Only perform this if an object is present.
-  if (BlockSize0 != 0){
-    LargeBlockCount0, SmallBlockCount0, BlockBuffer0 = BlockCount(char BlockSize0,
-                                                                  char BlockBuffer0,
-                                                                  char LargeBlockCount0,
-                                                                  char SmallBlockCount0);
-  }
-  if (BlockSize1 !=0){
-    LargeBlockCount1, SmallBlockCount1, BlockBuffer1 = BlockCount(char BlockSize1,
-                                                                  char BlockBuffer1,
-                                                                  char LargeBlockCount1,
-                                                                  char SmallBlockCount1);
-  }
-
-  State[1] = LargeBlockCount0; // 0 == conveyor 1
-  State[2] = SmallBlockCount0;
-  State[3] = LargeBlockCount1; // 1 == conveyor 2
-  State[4] = SmallBlockCount1;
-
-  // State is 1 if there is a change. May change this to MotorController input
-  State[0] = CompareBuffers(char State[], char LastState[])
-  // Save previous State.
-  strncpy(char LastState, State, 6);
-  // return array of 6 characters
-  return State[];
 }
 
-void MotorController(char State[]){
+void MotorController(){
   // Gate controller operation controls both gates
   // Return number of Large Blocks sorted
   setGates(char INPUT);
 }
 
-void Feedback(LargeBlockDetectConveyor1, SmallBlockDetectConveyor1,
-              LargeBlockCountConveyor1){
+void Feedback(){
   // User interface that returns number of large blocks detected,
   // snall blocks detected and large blocks collected.
   // Includes error catching and shutdown option.
@@ -119,24 +73,35 @@ void Feedback(LargeBlockDetectConveyor1, SmallBlockDetectConveyor1,
 }
 
 void Main(void){
-  // char State buffer holds conveyor info.
-  // State change | Large block count conveyor 1 | Small block count conveyor 1 |
-  // Large block count conveyor 2 | Small block count conveyor 2 | Reset
-  // 0 is null or no State change
-  // Initialise State buffer to 0
-  unsigned char State[] = {0, 0, 0, 0, 0, 1};
-  unsigned char LastState[] = {0, 0, 0, 0, 0, 0};
-  Interface();
-  startMotor(); // startMotor function from cinterface.h
+// Tasks cannot return values, only pass arguments IN.
+// Tasks will run the passive components of the code, the analysis will be
+// done in main()
+
+  startMotor();
   while(1){
+
+    // Setup that can be configured via the interface
     Settings();
-    // Update current State
-    State[] = CheckSensor(char State[], char LastState[]);
-    // If there is a State change then Motor is used.
-    if (State[0] != 0){
-      MotorController(char State[]);
-    }
-    // Should Feedback be in conditional statement or not?
+
+    // Poll for a keyboard input and respond accordinly
+    Interface();
+
+    // Check sensors and Count operation
+    // Sensors will cycle through State 1, 2 if small block
+    // Sensors will cycle through State 1, 3, 2 if large block
+    // readSizeSensors returns 0, 1, 2, 3 for no object, sensor 1, sensor 2, and
+    // sensor 1 & 2, respectively.
+    // The conveyor parameter distinguishes which conveyor is being checked.
+    // Input is either 0 or 1.
+    CheckSensor();
+
+    // Block count does not need to be a task!
+    BlockCount();
+
+    // Task that controls the gates for a given input
+    MotorController();
+
+    // Same as interface? Is this needed?
     Feedback();
   }
 }
