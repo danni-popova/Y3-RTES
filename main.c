@@ -18,73 +18,76 @@
 #include <stdlib.h>
 #include <ioLib.h>
 
-// Possible addition is user settings to change mode.
-void Settings(void){
-  // Initial settings that can be altered by the user
-}
-void Interface(void){}
-
-void BlockCount(char BlockSize, char BlockBuffer, char LargeBlockCount,
-                char SmallBlockCount){
-  if (BlockSize == 1){
-    BlockBuffer = 1;
-    }
-  if (BlockBuffer == 1){
-    switch (BlockSize){
-      case 0: printf("Error: Block has been removed from belt");
-      // Reset?
-      case 1: printf("Error: Conveyor belt motor has stopped");
-      case 2: SmallBlockCount = SmallBlockCount + 1;
-      case 3: LargeBlockCount = LargeBlockCount + 1;
-      default: printf("Error: Block size unknown!");
-    }
-    BlockBuffer = 0;
-  }
-  return LargeBlockCount, SmallBlockCount, BlockBuffer;
-}
-
-char CompareBuffers(char State[], char LastState[]){
-  for(char i=1; i<4; i++) {     // Iterate through State buffers from 1 to 4
-    if(State[i] != LasteState[i]){
-
-    }
-  }
-  return 0;
-}
+// // Possible addition is user settings to change mode.
+// void Settings(void){
+//   // Initial settings that can be altered by the user
+// }
+// void Interface(void){}
+//
+// void BlockCount(char BlockSize, char BlockBuffer, char LargeBlockCount,
+//                 char SmallBlockCount){
+//   if (BlockSize == 1){
+//     BlockBuffer = 1;
+//     }
+//   if (BlockBuffer == 1){
+//     switch (BlockSize){
+//       case 0: printf("Error: Block has been removed from belt");
+//       // Reset?
+//       case 1: printf("Error: Conveyor belt motor has stopped");
+//       case 2: SmallBlockCount = SmallBlockCount + 1;
+//       case 3: LargeBlockCount = LargeBlockCount + 1;
+//       default: printf("Error: Block size unknown!");
+//     }
+//     BlockBuffer = 0;
+//   }
+//   return LargeBlockCount, SmallBlockCount, BlockBuffer;
+// }
 
 void CheckSensor(){
-
-  // Reset sensor before use
-  char BlockSize0 = readSizeSensors(0);
-  char BlockSize1 = readSizeSensors(1);
+  while(1){
+    // Reset sensor before use
+    char BlockSize0 = readSizeSensors(0);
+    char BlockSize1 = readSizeSensors(1);
+    if (BlockSize0 != 0){
+      // Update Conveyor 1 flag or message
+    }
+    else if (BlockSize1 != 0){
+      // Update Conveyor 2 flag or message
+    }
+  }
 }
 
-void MotorController(){
+//void MotorController(){
   // Gate controller operation controls both gates
   // Return number of Large Blocks sorted
-  setGates(char INPUT);
-}
+  //setGates(char INPUT);
+//}
 
-void Feedback(){
-  // User interface that returns number of large blocks detected,
-  // snall blocks detected and large blocks collected.
-  // Includes error catching and shutdown option.
-  // Shutdown option may need to be an interrupt to override operations.
-}
+// void Feedback(){
+//   // User interface that returns number of large blocks detected,
+//   // snall blocks detected and large blocks collected.
+//   // Includes error catching and shutdown option.
+//   // Shutdown option may need to be an interrupt to override operations.
+// }
 
 void Main(void){
 // Tasks cannot return values, only pass arguments IN.
 // Tasks will run the passive components of the code, the analysis will be
 // done in main()
+// Find how to pass information from one place to another - use message queues
+// or flags
 
   startMotor();
   while(1){
+    int task_id; // Rename
 
-    // Setup that can be configured via the interface
-    Settings();
+    // Setup that can be configured via the interface (include later)
+    //Settings();
 
     // Poll for a keyboard input and respond accordinly
-    Interface();
+    // This can be a Task
+    // Message queue for keyboard inputs
+    // Interface();
 
     // Check sensors and Count operation
     // Sensors will cycle through State 1, 2 if small block
@@ -93,15 +96,18 @@ void Main(void){
     // sensor 1 & 2, respectively.
     // The conveyor parameter distinguishes which conveyor is being checked.
     // Input is either 0 or 1.
-    CheckSensor();
+    // CheckSensor may not be possible to do as a Task
+    // How to set a flag without using global variables?
+    task_id = taskSpawn("CheckSensor", 100, 0, 20000,
+                        (FUNCPTR)CheckSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
     // Block count does not need to be a task!
-    BlockCount();
+    //BlockCount();
 
     // Task that controls the gates for a given input
-    MotorController();
+    //MotorController();
 
     // Same as interface? Is this needed?
-    Feedback();
+    //Feedback();
   }
 }
