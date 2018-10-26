@@ -49,19 +49,19 @@ void CheckSensor(){
     char BlockSize0 = readSizeSensors(0);
     char BlockSize1 = readSizeSensors(1);
     if (BlockSize0 != 0){
-      // Update Conveyor 1 flag or send a message - Pass a full array of info
+      // Update Conveyor 1 flag or send a message/semaphore - Pass a full array of info
     }
     else if (BlockSize1 != 0){
-      // Update Conveyor 2 flag or send a message - Pass a full array of info
+      // Update Conveyor 2 flag or send a message/semaphore - Pass a full array of info
     }
   }
 }
 
-//void MotorController(){
+void MotorController(){
   // Gate controller operation controls both gates
   // Return number of Large Blocks sorted
-  //setGates(char INPUT);
-//}
+  setGates(char INPUT);
+}
 
 // void Feedback(){
 //   // User interface that returns number of large blocks detected,
@@ -79,7 +79,8 @@ void Main(void){
 
   startMotor();
   while(1){
-    int task_id; // Rename
+    int CheckSensor_id;
+    int MotorController_id;
 
     // Setup that can be configured via the interface (include later)
     //Settings();
@@ -98,14 +99,15 @@ void Main(void){
     // Input is either 0 or 1.
     // CheckSensor may not be possible to do as a Task
     // How to set a flag without using global variables?
-    task_id = taskSpawn("CheckSensor", 100, 0, 20000,
+    CheckSensor_id = taskSpawn("CheckSensor", 100, 0, 20000,
                         (FUNCPTR)CheckSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
     // Block count does not need to be a task!
     //BlockCount();
 
     // Task that controls the gates for a given input
-    //MotorController();
+    MotorController_id = taskSpawn("MotorController", 100, 0, 20000,
+                        (FUNCPTR)MotorController, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
     // Same as interface? Is this needed?
     //Feedback();
