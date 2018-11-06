@@ -24,24 +24,45 @@
 // }
 // void Interface(void){}
 //
-// void BlockCount(char BlockSize, char BlockBuffer, char LargeBlockCount,
-//                 char SmallBlockCount){
-//   if (BlockSize == 1){
-//     BlockBuffer = 1;
-//     }
-//   if (BlockBuffer == 1){
-//     switch (BlockSize){
-//       case 0: printf("Error: Block has been removed from belt");
-//       // Reset?
-//       case 1: printf("Error: Conveyor belt motor has stopped");
-//       case 2: SmallBlockCount = SmallBlockCount + 1;
-//       case 3: LargeBlockCount = LargeBlockCount + 1;
-//       default: printf("Error: Block size unknown!");
-//     }
-//     BlockBuffer = 0;
-//   }
-//   return LargeBlockCount, SmallBlockCount, BlockBuffer;
-// }
+void BlockCount(char BlockSize, char BlockBuffer, char LargeBlockCount,
+                char SmallBlockCount){
+  // Wait for message to be recieved
+
+  // This needs to be edited for both belts
+  if (BlockSize == 1){
+    // Seperate blockbuffer value by belt
+    if (Belt1){
+      BlockBuffer0 = 1;
+    }
+    else if (Belt2){
+      BlockBuffer1 = 1;
+    }
+    }
+  if (BlockBuffer0 == 1){ // Belt 1
+    switch (BlockSize){
+      case 0: printf("Error: Block has been removed from belt");
+      // Reset?
+      case 1: printf("Error: Conveyor belt motor has stopped");
+      case 2: SmallBlockCount = SmallBlockCount + 1;
+      case 3: LargeBlockCount = LargeBlockCount + 1;
+      default: printf("Error: Block size unknown!");
+    }
+    BlockBuffer = 0;
+    // Send message
+  }
+  else if (BlockBuffer1 == 1){ // Belt 2
+    switch (BlockSize){
+      case 0: printf("Error: Block has been removed from belt");
+      // Reset?
+      case 1: printf("Error: Conveyor belt motor has stopped");
+      case 2: SmallBlockCount = SmallBlockCount + 1;
+      case 3: LargeBlockCount = LargeBlockCount + 1;
+      default: printf("Error: Block size unknown!");
+    }
+    BlockBuffer = 0;
+    // Send message
+  }
+}
 
 void CheckSensor(){
   while(1){
