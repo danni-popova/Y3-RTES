@@ -24,63 +24,40 @@
 // }
 // void Interface(void){}
 //
-void BlockCount(char BlockSize, char BlockBuffer, char LargeBlockCount,
-                char SmallBlockCount){
+void BlockCount(void){
   // Wait for message to be recieved
+  // Save message to array
+  // small == 1, 0 -- Use for counting
+  // large == 1, 1 -- Use for counting
+  // 1 small == 1, 0, 2
+  // 1 large == 1, 1, 3
+  // 2 small == 0, 3, 0
+  // 2 large == 2, 3, 1
+  // large then small == 2, 3, 0
+  // small then large == 0, 3, 1
+  // end 'bit' == 2, 0
 
-  // This needs to be edited for both belts
-  if (BlockSize == 1){
-    // Seperate blockbuffer value by belt
-    if (Belt1){
-      BlockBuffer0 = 1;
-    }
-    else if (Belt2){
-      BlockBuffer1 = 1;
-    }
-    }
-  if (BlockBuffer0 == 1){ // Belt 1
-    switch (BlockSize){
-      case 0: printf("Error: Block has been removed from belt");
-      // Reset?
-      case 1: printf("Error: Conveyor belt motor has stopped");
-      case 2: SmallBlockCount = SmallBlockCount + 1;
-      case 3: LargeBlockCount = LargeBlockCount + 1;
-      default: printf("Error: Block size unknown!");
-    }
-    BlockBuffer = 0;
-    // Send message
-  }
-  else if (BlockBuffer1 == 1){ // Belt 2
-    switch (BlockSize){
-      case 0: printf("Error: Block has been removed from belt");
-      // Reset?
-      case 1: printf("Error: Conveyor belt motor has stopped");
-      case 2: SmallBlockCount = SmallBlockCount + 1;
-      case 3: LargeBlockCount = LargeBlockCount + 1;
-      default: printf("Error: Block size unknown!");
-    }
-    BlockBuffer = 0;
-    // Send message
-  }
+  // If array contains correct message code, indicate for motor controller to
+  // start
 }
 
+// How fast to poll the sensors?
 void CheckSensor(){
   while(1){
     // Reset sensor before use
+    // Sensors MUST be read SYNCHRONOUSLY (every 'tick')
     char BlockSize0 = readSizeSensors(0);
     char BlockSize1 = readSizeSensors(1);
-    if (BlockSize0 != 0){
-      // Update Conveyor 1 flag or send a message/semaphore - Pass a full array of info
-    }
-    else if (BlockSize1 != 0){
-      // Update Conveyor 2 flag or send a message/semaphore - Pass a full array of info
-    }
+
+    // Update Conveyor 1 send BlockSize0
+
+    // Update Conveyor 2 send BlockSize1
+
   }
 }
 
 void MotorController(){
   // Gate controller operation controls both gates
-  // Return number of Large Blocks sorted
   setGates(char INPUT);
 }
 
@@ -112,8 +89,9 @@ void Main(void){
     // Interface();
 
     // Check sensors and Count operation
-    // Sensors will cycle through State 1, 2 if small block
+    // Sensors will cycle through State 1, 0, 2 if small block
     // Sensors will cycle through State 1, 3, 2 if large block
+    // Sensors will cycle through State 1, 0, 3 if 2 small blocks
     // readSizeSensors returns 0, 1, 2, 3 for no object, sensor 1, sensor 2, and
     // sensor 1 & 2, respectively.
     // The conveyor parameter distinguishes which conveyor is being checked.
