@@ -22,23 +22,28 @@
 // void Settings(void){
 //   // Initial settings that can be altered by the user
 // }
-// void Interface(void){}
+// void Interface(void){
+// // Shutdown
+//}
 //
-void BlockCount(void){
+void BlockBuffer(void){
   // Wait for message to be recieved
-  // Save message to array
-  // small == 1, 0 -- Use for counting
-  // large == 1, 1 -- Use for counting
-  // 1 small == 1, 0, 2
-  // 1 large == 1, 1, 3
-  // 2 small == 0, 3, 0
-  // 2 large == 2, 3, 1
-  // large then small == 2, 3, 0
-  // small then large == 0, 3, 1
+  // Check if msg is different to most recent buffer item
+  // If so, Save message to array
+  // small (1) == 1, 0 -- Use for counting (?) -- Send DOWN to MotorController with Default timing
+  // small (2) == 3, 0 -- Use for counting (?) -- Send DOWN with Default timing
+  // large == 1, 3 -- Use for counting (?) -- Send UP with Default timing
+  // 1 small == 1, 0, 2 -- Count?
+  // 1 large == 1, 1, 3 OR 1, 3, 2 -- Count?
+  // 2 small == 0, 3, 0 -- Send DOWN with Long timing (?)
+  // 2 large == 2, 3, 1 --  Send UP with Long timing (?)
+  // large then small == 2, 3, 0 -- Send UPDOWN
+  // small then large == 0, 3, 1 -- Send DOWNUP
   // end 'bit' == 2, 0
 
-  // If array contains correct message code, indicate for motor controller to
-  // start
+  // If array contains correct message code, send message of what the MotorController
+  // needs to do and when
+  // Send count msg to Interface
 }
 
 // How fast to poll the sensors?
@@ -49,16 +54,21 @@ void CheckSensor(){
     char BlockSize0 = readSizeSensors(0);
     char BlockSize1 = readSizeSensors(1);
 
-    // Update Conveyor 1 send BlockSize0
+    // Update Conveyor 1 send msg BlockSize0
 
-    // Update Conveyor 2 send BlockSize1
+    // Update Conveyor 2 send msg BlockSize1
 
   }
 }
-
+// Sort timing for BOTH conveyors!!
 void MotorController(){
   // Gate controller operation controls both gates
+  // Recieve msg from Buffer and control gates correspondingly
+  // Gates need to stay open for a certain amount of time so this should be
+  // amended accordingly
+  // Recieve DOWN or UP or BOTH from buffers, compare buffers for both belts
   setGates(char INPUT);
+  // Send message to count sensor to read the count sensor at correct time
 }
 
 // void Feedback(){
@@ -69,12 +79,6 @@ void MotorController(){
 // }
 
 void Main(void){
-// Tasks cannot return values, only pass arguments IN.
-// Tasks will run the passive components of the code, the analysis will be
-// done in main()
-// Find how to pass information from one place to another - use message queues
-// or flags
-
   startMotor();
   while(1){
     int CheckSensor_id;
@@ -89,26 +93,15 @@ void Main(void){
     // Interface();
 
     // Check sensors and Count operation
-    // Sensors will cycle through State 1, 0, 2 if small block
-    // Sensors will cycle through State 1, 3, 2 if large block
-    // Sensors will cycle through State 1, 0, 3 if 2 small blocks
     // readSizeSensors returns 0, 1, 2, 3 for no object, sensor 1, sensor 2, and
     // sensor 1 & 2, respectively.
     // The conveyor parameter distinguishes which conveyor is being checked.
     // Input is either 0 or 1.
-    // CheckSensor may not be possible to do as a Task
-    // How to set a flag without using global variables?
     CheckSensor_id = taskSpawn("CheckSensor", 100, 0, 20000,
                         (FUNCPTR)CheckSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
-
-    // Block count does not need to be a task!
-    //BlockCount();
 
     // Task that controls the gates for a given input
     MotorController_id = taskSpawn("MotorController", 100, 0, 20000,
                         (FUNCPTR)MotorController, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
-
-    // Same as interface? Is this needed?
-    //Feedback();
   }
 }
