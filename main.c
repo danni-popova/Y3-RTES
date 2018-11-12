@@ -26,7 +26,7 @@
 // // Shutdown
 //}
 //
-void BlockBuffer(void){
+void AnalyseConveyor0(void){
   // Wait for message to be recieved
   // Check if msg is different to most recent buffer item
   // If so, Save message to array
@@ -44,6 +44,18 @@ void BlockBuffer(void){
   // If array contains correct message code, send message of what the MotorController
   // needs to do and when
   // Send count msg to Interface
+  char BlockBuffer0[2] = {0};
+  while(1){
+    // RECEIVE MESSAGE
+    for (char i = 1; i < 3; i--) {
+      BlockBuffer0[i] = BlockBuffer0[i-1]
+    }
+    BlockBuffer0[0] = //MESSAGE
+  }
+}
+
+void AnalyseConveyor1(void){
+
 }
 
 // How fast to poll the sensors?
@@ -54,9 +66,11 @@ void CheckSensor(){
     char BlockSize0 = readSizeSensors(0);
     char BlockSize1 = readSizeSensors(1);
 
-    // Update Conveyor 1 send msg BlockSize0
+    // SEMGIVE
 
-    // Update Conveyor 2 send msg BlockSize1
+    // Update Conveyor 1 send msg AnalyseConveyor0
+
+    // Update Conveyor 2 send msg AnalyseConveyor1
 
   }
 }
