@@ -28,6 +28,9 @@ char Reset[2] = {0, 0, 0};
 char GateState;
 char C0StartFlag;
 char C1StartFlag;
+// Need WatchDog timers depending on state
+// Close gate watchdog x3 times
+// Open gate watchdog time, then reset the GateState
 
 // // Possible addition is user settings to change mode.
 // void Settings(void){
@@ -131,7 +134,7 @@ void CheckSensor(){
 
   }
 }
-// Sort timing for BOTH conveyors!!
+
 void MotorController(char GateState){
   // Gate controller operation controls both gates
   // Recieve msg from Buffer and control gates correspondingly
