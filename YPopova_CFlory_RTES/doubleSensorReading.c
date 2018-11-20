@@ -51,7 +51,7 @@ void readLeftSizeSensors(void)
             if(newState == 0) && (oldState == 1)
             {
                 printf("Small block on left belt");
-                createCloseGateTimer();
+                createCloseGateTimer(0);
             }
             
             // Reset old state to current state
@@ -60,14 +60,66 @@ void readLeftSizeSensors(void)
     }
 }
 
-void createCloseGateTimer(void)
-{
-    
-}
-
 void readRightSizeSensors(void)
 {
+    char newState = 0; 
+    char oldState = 0;
 
+    // Continually reset and read sensors, operaing only upon change of state
+    while(1)
+    {
+        resetSizeSensors(1);
+        newState = readSizeSensors(1);
+
+        // If the readinng is new, establish current block size
+        if(newState != oldState)
+        {
+
+            if(newState == 0) && (oldState == 1)
+            {
+                printf("Small block on right belt");
+                createCloseGateTimer(1);
+            }
+            
+            // Reset old state to current state
+            oldState = newState;
+        }
+    }
+}
+
+void createCloseGateTimer(char gate)
+{
+    int res;
+	WDOG_ID clearGatesFlagTimer = wdCreate();
+
+	if (clearGatesFlagTimer == NULL) 
+	{
+		printf("Cannot create timer!!! Terminating this task...");
+		exit(0);
+	}
+	
+	res = wdStart(clearGatesFlagTimer,
+                  1 * sysClkRateGet(),
+                  (FUNCPTR)setGateFlag,
+                  gate);
+
+	if (res == ERROR) 
+	{
+		printf("Cannot start the timer!!! Terminating...");
+		exit(0);
+	}
+}
+
+void setGateFlag(char gate)
+{
+    if(gate == 0)
+    {
+        leftGateFlag = 1;
+    }
+    else if(gate == 1)
+    {
+        rightGateFlag = 1;
+    }
 }
 
 void OperateGates(void)
