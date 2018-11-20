@@ -18,12 +18,13 @@
 #include <stdlib.h>
 #include <ioLib.h>
 
-char S[2] = {1, 0, 2};
-char L[2] = {1, 1, 3};
-char SS[2] = {0, 3, 0};
-char LL[2] = {2, 3, 1};
-char SL[2] = {0, 3, 1};
-char LS[2] = {2, 3, 0};
+char S[2] = {1, 0, 2}; // Do not count, Influence gates
+char L[2] = {1, 3, 2}; // Only count, do not influence gates
+char SS[2] = {0, 3, 0}; // Do not count, Influence gates
+char LL[2] = {2, 3, 1}; // Do not count, do not influence gates, Do we need this?
+char SL[2] = {0, 3, 1}; // Count AND influence gates
+char LS[2] = {2, 3, 0}; // Count AND influence gates
+char Reset[2] = {0, 0, 0};
 char GateState;
 char C0StartFlag;
 char C1StartFlag;
@@ -46,7 +47,7 @@ char identical(char a[], char b[]) {
 }
 
 // This is a function that the conveyors will need to SHARE
-void AnalyseConveyor(void){
+void AnalyseBlocks(void){
   // small (1) == 1, 0 -- Use for counting (?) -- Send DOWN to MotorController with Default timing
   // small (2) == 3, 0 -- Use for counting (?) -- Send DOWN with Default timing
   // large == 1, 3 -- Use for counting (?) -- Send UP with Default timing
@@ -68,14 +69,43 @@ void AnalyseConveyor(void){
       State = identical(Logic[i], BlockBuffer);
       if (State == 1){
         // Pass message to Gates
-        return Logic[i];
+        return Logic[i]; // If i == 6 then Reset flag
         break;
       }
     }
-    return 6; // Returns out of bounds number indicating no recognised state
   }
 }
 
+void AnalyseConveyor0(){
+  char BlockBuffer0[2] = {0};
+  while(1){
+    // If a sensor detects 1 for the first time, set the start flag
+    if (BlockSize0 == 1 && C0StartFlag == 0){
+      C0StartFlag = 1;
+    }
+    // Check Flag and that the next state isn't a duplicate
+    if (C0StartFlag == 1 && BlockSize0 != BlockBuffer0[0]){
+      BlockBuffer0 = BufferFunction(BlockBuffer0, BlockSize0)
+      // Send buffer somewhere
+    }
+  }
+}
+
+void AnalyseConveyor1(){
+  char BlockBuffer1[2] = {0};
+  while(1){
+    // If a sensor detects 1 for the first time, set the start flag
+    if (BlockSize1 == 1 && C1StartFlag == 0){
+      C1StartFlag = 1;
+    }
+    if (C1StartFlag == 1 && BlockSize0 != BlockBuffer0[0]){
+      BlockBuffer1 = BufferFunction(BlockBuffer1, BlockSize1)
+      // Send buffer somewhere
+    }
+  }
+}
+
+// Shifts states in the buffer along
 void BufferFunction(char BlockBuffer[], char BlockSize){
     for (char i = 1; i < 3; i--) {
       BlockBuffer[i] = BlockBuffer[i-1]
@@ -85,33 +115,15 @@ void BufferFunction(char BlockBuffer[], char BlockSize){
 }
 
 // How fast to poll the sensors?
+// This might be a function
 void CheckSensor(){
-  char BlockBuffer0[2] = {0};
-  char BlockBuffer1[2] = {0};
   while(1){
     // Reset sensor before use
     // Sensors MUST be read SYNCHRONOUSLY (every 'tick')
     char BlockSize0 = readSizeSensors(0);
-    if (BlockSize0 == 1 && C0StartFlag == 0){
-      C0StartFlag = 1;
-    }
-    if (C0StartFlag == 1){
-      BlockBuffer0 = BufferFunction(BlockBuffer0, BlockSize0)
-    }
-
+    // Send to analyses
     char BlockSize1 = readSizeSensors(1);
-    if (BlockSize1 == 1 && C1StartFlag == 0){
-      C1StartFlag = 1;
-    }
-    if (C1StartFlag == 1){
-      BlockBuffer1 = BufferFunction(BlockBuffer1, BlockSize1)
-    }
-
-    // SEMGIVE
-
-    // Update Conveyor 1 send msg AnalyseConveyor0
-
-    // Update Conveyor 2 send msg AnalyseConveyor1
+    // Send to analyses
 
   }
 }
