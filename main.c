@@ -78,6 +78,7 @@ void AnalyseBlocks(void){
 
 void AnalyseConveyor0(){
   char BlockBuffer0[2] = {0};
+  char State[3] = {0};
   while(1){
     // If a sensor detects 1 for the first time, set the start flag
     if (BlockSize0 == 1 && C0StartFlag == 0){
@@ -86,13 +87,15 @@ void AnalyseConveyor0(){
     // Check Flag and that the next state isn't a duplicate
     if (C0StartFlag == 1 && BlockSize0 != BlockBuffer0[0]){
       BlockBuffer0 = BufferFunction(BlockBuffer0, BlockSize0)
-      // Send buffer somewhere
+      State = AnalyseBlocks(BlockBuffer0);
+      // Analyse state and act accordingly
     }
   }
 }
 
 void AnalyseConveyor1(){
   char BlockBuffer1[2] = {0};
+  char State[3] = {0};
   while(1){
     // If a sensor detects 1 for the first time, set the start flag
     if (BlockSize1 == 1 && C1StartFlag == 0){
@@ -100,7 +103,8 @@ void AnalyseConveyor1(){
     }
     if (C1StartFlag == 1 && BlockSize0 != BlockBuffer0[0]){
       BlockBuffer1 = BufferFunction(BlockBuffer1, BlockSize1)
-      // Send buffer somewhere
+      State = AnalyseBlocks(BlockBuffer1);
+      // Analyse state and act accordingly
     }
   }
 }
