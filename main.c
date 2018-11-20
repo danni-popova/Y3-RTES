@@ -25,6 +25,8 @@ char LL[2] = {2, 3, 1};
 char SL[2] = {0, 3, 1};
 char LS[2] = {2, 3, 0};
 char GateState;
+char C0StartFlag;
+char C1StartFlag;
 
 // // Possible addition is user settings to change mode.
 // void Settings(void){
@@ -43,7 +45,8 @@ char identical(char a[], char b[]) {
     return 1;
 }
 
-void AnalyseConveyor0(void){
+// This is a function that the conveyors will need to SHARE
+void AnalyseConveyor(void){
   // small (1) == 1, 0 -- Use for counting (?) -- Send DOWN to MotorController with Default timing
   // small (2) == 3, 0 -- Use for counting (?) -- Send DOWN with Default timing
   // large == 1, 3 -- Use for counting (?) -- Send UP with Default timing
@@ -59,37 +62,50 @@ void AnalyseConveyor0(void){
   // If array contains correct message code, send message of what the MotorController
   // needs to do and when
   // Send count msg to Interface
-  char BlockBuffer0[2] = {0};
   while(1){
-    // RECEIVE MESSAGE
-    for (char i = 1; i < 3; i--) {
-      BlockBuffer0[i] = BlockBuffer0[i-1]
-    }
-    BlockBuffer0[0] = //MESSAGE
-
     State = 0;
     for (char i = 0; i < 5; i++){
-      State = identical(Logic[i], BlockBuffer0);
+      State = identical(Logic[i], BlockBuffer);
       if (State == 1){
         // Pass message to Gates
-        Logic[i];
+        return Logic[i];
         break;
       }
     }
+    return 6; // Returns out of bounds number indicating no recognised state
   }
 }
 
-void AnalyseConveyor1(void){
-
+void BufferFunction(char BlockBuffer[], char BlockSize){
+    for (char i = 1; i < 3; i--) {
+      BlockBuffer[i] = BlockBuffer[i-1]
+    }
+    BlockBuffer[0] = BlockSize;
+    return BlockBuffer;
 }
 
 // How fast to poll the sensors?
 void CheckSensor(){
+  char BlockBuffer0[2] = {0};
+  char BlockBuffer1[2] = {0};
   while(1){
     // Reset sensor before use
     // Sensors MUST be read SYNCHRONOUSLY (every 'tick')
     char BlockSize0 = readSizeSensors(0);
+    if (BlockSize0 == 1 && C0StartFlag == 0){
+      C0StartFlag = 1;
+    }
+    if (C0StartFlag == 1){
+      BlockBuffer0 = BufferFunction(BlockBuffer0, BlockSize0)
+    }
+
     char BlockSize1 = readSizeSensors(1);
+    if (BlockSize1 == 1 && C1StartFlag == 0){
+      C1StartFlag = 1;
+    }
+    if (C1StartFlag == 1){
+      BlockBuffer1 = BufferFunction(BlockBuffer1, BlockSize1)
+    }
 
     // SEMGIVE
 
