@@ -18,6 +18,8 @@
 #include <stdlib.h>
 #include <ioLib.h>
 
+char GateState;
+
 // // Possible addition is user settings to change mode.
 // void Settings(void){
 //   // Initial settings that can be altered by the user
@@ -26,10 +28,16 @@
 // // Shutdown
 //}
 //
+
+char identical(char a, char b) {
+    for (char i = 0 ; i < 3 ; ++i) {
+        if (a[i] != b[i])
+            return 0;
+    }
+    return 1;
+}
+
 void AnalyseConveyor0(void){
-  // Wait for message to be recieved
-  // Check if msg is different to most recent buffer item
-  // If so, Save message to array
   // small (1) == 1, 0 -- Use for counting (?) -- Send DOWN to MotorController with Default timing
   // small (2) == 3, 0 -- Use for counting (?) -- Send DOWN with Default timing
   // large == 1, 3 -- Use for counting (?) -- Send UP with Default timing
@@ -40,6 +48,12 @@ void AnalyseConveyor0(void){
   // large then small == 2, 3, 0 -- Send UPDOWN
   // small then large == 0, 3, 1 -- Send DOWNUP
   // end 'bit' == 2, 0
+  char S[2] = {1, 0, 2};
+  char L[2] = {1, 1, 3};
+  char SS[2] = {0, 3, 0};
+  char LL[2] = {2, 3, 1};
+  char SL[2] = {0, 3, 1};
+  char LS[2] = {2, 3, 0};
 
   // If array contains correct message code, send message of what the MotorController
   // needs to do and when
@@ -51,6 +65,10 @@ void AnalyseConveyor0(void){
       BlockBuffer0[i] = BlockBuffer0[i-1]
     }
     BlockBuffer0[0] = //MESSAGE
+    
+    for (char i = 0; i < 3; i++){
+
+    }
   }
 }
 
@@ -75,13 +93,13 @@ void CheckSensor(){
   }
 }
 // Sort timing for BOTH conveyors!!
-void MotorController(){
+void MotorController(char GateState){
   // Gate controller operation controls both gates
   // Recieve msg from Buffer and control gates correspondingly
   // Gates need to stay open for a certain amount of time so this should be
   // amended accordingly
   // Recieve DOWN or UP or BOTH from buffers, compare buffers for both belts
-  setGates(char INPUT);
+  setGates(char GateState);
   // Send message to count sensor to read the count sensor at correct time
 }
 
@@ -114,7 +132,7 @@ void Main(void){
     CheckSensor_id = taskSpawn("CheckSensor", 100, 0, 20000,
                         (FUNCPTR)CheckSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
-    // Task that controls the gates for a given input
+    // Does this need to be a task?
     MotorController_id = taskSpawn("MotorController", 100, 0, 20000,
                         (FUNCPTR)MotorController, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
   }
