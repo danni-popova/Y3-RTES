@@ -18,6 +18,12 @@
 #include <stdlib.h>
 #include <ioLib.h>
 
+char S[2] = {1, 0, 2};
+char L[2] = {1, 1, 3};
+char SS[2] = {0, 3, 0};
+char LL[2] = {2, 3, 1};
+char SL[2] = {0, 3, 1};
+char LS[2] = {2, 3, 0};
 char GateState;
 
 // // Possible addition is user settings to change mode.
@@ -29,7 +35,7 @@ char GateState;
 //}
 //
 
-char identical(char a, char b) {
+char identical(char a[], char b[]) {
     for (char i = 0 ; i < 3 ; ++i) {
         if (a[i] != b[i])
             return 0;
@@ -48,12 +54,7 @@ void AnalyseConveyor0(void){
   // large then small == 2, 3, 0 -- Send UPDOWN
   // small then large == 0, 3, 1 -- Send DOWNUP
   // end 'bit' == 2, 0
-  char S[2] = {1, 0, 2};
-  char L[2] = {1, 1, 3};
-  char SS[2] = {0, 3, 0};
-  char LL[2] = {2, 3, 1};
-  char SL[2] = {0, 3, 1};
-  char LS[2] = {2, 3, 0};
+  char Logic[5]; {S, L, SS, LL, SL, LS};
 
   // If array contains correct message code, send message of what the MotorController
   // needs to do and when
@@ -65,9 +66,15 @@ void AnalyseConveyor0(void){
       BlockBuffer0[i] = BlockBuffer0[i-1]
     }
     BlockBuffer0[0] = //MESSAGE
-    
-    for (char i = 0; i < 3; i++){
 
+    State = 0;
+    for (char i = 0; i < 5; i++){
+      State = identical(Logic[i], BlockBuffer0);
+      if (State == 1){
+        // Pass message to Gates
+        Logic[i];
+        break;
+      }
     }
   }
 }
