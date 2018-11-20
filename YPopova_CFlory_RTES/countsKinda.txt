@@ -9,6 +9,59 @@ int blocksDetected = 0;
 int smallBlocksDetected = 0;
 int bigBlocksDetected = 0;
 
+char smallBlockFlag = 0;
+
+void openGate(void)
+{
+	setGates(0);
+}
+
+void openGateTimer(void)
+{	
+	int res;
+	WDOG_ID openGateTimerID = wdCreate();
+
+	if (openGateTimerID == NULL) 
+	{
+		printf("Cannot create timer!!! Terminating this task...");
+		exit(0);
+	}
+	
+	res = wdStart(openGateTimerID, 4 * sysClkRateGet(), (FUNCPTR)openGate, 0);
+
+	if (res == ERROR) 
+	{
+		printf("Cannot start the timer!!! Terminating...");
+		exit(0);
+	}
+}
+
+void closeGate(void)
+{
+	setGates(3);
+}
+
+void closeGateTimer(void)
+{
+	printf("Creating close gate timer");
+	
+	int res;
+	WDOG_ID closeGateTimerID = wdCreate();
+
+	if (closeGateTimerID == NULL) 
+	{
+		printf("Cannot create timer!!! Terminating this task...");
+		exit(0);
+	}
+	
+	res = wdStart(closeGateTimerID, 2 * sysClkRateGet(), (FUNCPTR)closeGate, 0);
+
+	if (res == ERROR) 
+	{
+		printf("Cannot start the timer!!! Terminating...");
+		exit(0);
+	}
+}
 
 void PrintStatus(void) 
 {
@@ -32,7 +85,6 @@ void readMainSensors(void)
 	while(1)
 	{
 		resetSizeSensors(0);
-		
 		newMainState = readSizeSensors(0);
 		
 		if(newMainState != oldMainState)
@@ -43,8 +95,11 @@ void readMainSensors(void)
 					printf("No blocks in front of size sensors\n");
 					
 					if(oldMainState == 1)
-						smallBlocksDetected++;
-					
+						{
+							smallBlocksDetected++;
+							closeGateTimer();
+							openGateTimer();
+						}
 					break;
 				case 1:
 					printf("Block in front of first size sensor\n");
@@ -88,23 +143,20 @@ void stop(void)
 	stopMotor();
 }
 
-void controlGates(char command) 
+/*switch (command) 
 {
-	switch (command) 
-	{
-		case 0:
-			printf("Opening both gates.");
-			break;
-		case 1:
-			printf("Open gate 0, close gate 1");
-			break;
-		case 2:
-			printf("Close gate 0, open gate 1");
-			break;
-		case 3:
-			printf("Closing both gates.");
-			break;
-	}
-
-	setGates(command);
+	case 0:
+		printf("Opening both gates.");
+		break;
+	case 1:
+		printf("Open gate 0, close gate 1");
+		break;
+	case 2:
+		printf("Close gate 0, open gate 1");
+		break;
+	case 3:
+		printf("Closing both gates.");
+		break;
 }
+*/
+
