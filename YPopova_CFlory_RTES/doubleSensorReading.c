@@ -14,76 +14,15 @@ char rightGateFlag = 0;
 
 int readLeftSensorsTaskId, readRightSensorsTaskId, operateGatesTaskId; 
 
-void main(void)
+void setGateFlag(char gate)
 {
-	createTasks();
-}
-
-void createTasks(void)
-{
-    // Tasks for reading sensors on each belt
-    readLeftSensorsTaskId = taskSpawn("ReadLeftSensors",
-         100, 0, 20000, (FUNCPTR)readLeftSizeSensors, 0,0,0,0,0,0,0,0,0,0);
-
-    readLeftSensorsTaskId = taskSpawn("ReadRightSensors",
-         101, 0, 20000, (FUNCPTR)readRightSizeSensors, 0,0,0,0,0,0,0,0,0,0);
-    
-    // Task for operating gates
-    operateGatesTaskId = taskSpawn("OperateGates",
-         99, 0, 20000, (FUNCPTR)OperateGates, 0,0,0,0,0,0,0,0,0,0);
-}
-
-void readLeftSizeSensors(void)
-{
-    char newState = 0; 
-    char oldState = 0;
-
-    // Continually reset and read sensors, operaing only upon change of state
-    while(1)
+    if(gate == 0)
     {
-        resetSizeSensors(0);
-        newState = readSizeSensors(0);
-
-        // If the readinng is new, establish current block size
-        if(newState != oldState)
-        {
-
-            if(newState == 0) && (oldState == 1)
-            {
-                printf("Small block on left belt");
-                createCloseGateTimer(0);
-            }
-            
-            // Reset old state to current state
-            oldState = newState;
-        }
+        leftGateFlag = 1;
     }
-}
-
-void readRightSizeSensors(void)
-{
-    char newState = 0; 
-    char oldState = 0;
-
-    // Continually reset and read sensors, operaing only upon change of state
-    while(1)
+    else if(gate == 1)
     {
-        resetSizeSensors(1);
-        newState = readSizeSensors(1);
-
-        // If the readinng is new, establish current block size
-        if(newState != oldState)
-        {
-
-            if(newState == 0) && (oldState == 1)
-            {
-                printf("Small block on right belt");
-                createCloseGateTimer(1);
-            }
-            
-            // Reset old state to current state
-            oldState = newState;
-        }
+        rightGateFlag = 1;
     }
 }
 
@@ -110,47 +49,13 @@ void createCloseGateTimer(char gate)
 	}
 }
 
-void setGateFlag(char gate)
+void clearFlags(char lGateState, char rGateState)
 {
-    if(gate == 0)
-    {
-        leftGateFlag = 1;
-    }
-    else if(gate == 1)
-    {
-        rightGateFlag = 1;
-    }
-}
+    if(lGateState == 1)
+        leftGateFlag = 0;
 
-void OperateGates(void)
-{
-    while(1)
-    {
-        // Wait for gates flag to be raised
-        
-        if(leftGateFlag == 0 && rightGateFlag == 0)
-        {
-            // Open both gates
-            setGates(0);
-        }
-        if(leftGateFlag == 0 && rightGateFlag == 1)
-        {
-            // Open left, close right
-            setGates(1);
-        }
-        if(leftGateFlag == 1 && rightGateFlag == 0)
-        {
-            // Close left, open right
-            setGates(2);
-        }
-        if(leftGateFlag == 1 && rightGateFlag == 1)
-        {
-            // Open both
-            setGates(3);
-        }
-
-        createGateFlagResetTimer(leftGateFlag, rightGateFlag);
-    }    
+    if(rGateState == 1)
+        rightGateFlag = 0;
 }
 
 void createGateFlagResetTimer(char lGateState, char rGateState)
@@ -166,7 +71,7 @@ void createGateFlagResetTimer(char lGateState, char rGateState)
 	
 	res = wdStart(clearGatesFlagTimer,
                   1 * sysClkRateGet(),
-                  (FUNCPTR)openGate,
+                  (FUNCPTR)clearFlags,
                   lGateState, rGateState);
 
 	if (res == ERROR) 
@@ -176,13 +81,115 @@ void createGateFlagResetTimer(char lGateState, char rGateState)
 	}
 }
 
-void clearFlags(char lGateState, chatrGateState)
+void OperateGates(void)
 {
-    if(lGateState == 1)
-        leftGateFlag = 0;
+    while(1)
+    {
+        /* Wait for gates flag to be raised */
+        
+        if(leftGateFlag == 0 && rightGateFlag == 0)
+        {
+            /* Open both gates */
+            setGates(0);
+        }
+        if(leftGateFlag == 0 && rightGateFlag == 1)
+        {
+            /*  Open left, close right */
+            setGates(1);
+        }
+        if(leftGateFlag == 1 && rightGateFlag == 0)
+        {
+            /* Close left, open right */
+            setGates(2);
+        }
+        if(leftGateFlag == 1 && rightGateFlag == 1)
+        {
+            /* Open both */
+            setGates(3);
+        }
 
-    if(rGateState == 1)
-        rightGateFlag == 0;
+        createGateFlagResetTimer(leftGateFlag, rightGateFlag);
+    }    
+}
+
+void readLeftSizeSensors(void)
+{
+    char newState = 0; 
+    char oldState = 0;
+
+    /* Continually reset and read sensors, operaing only upon change of state*/
+    while(1)
+    {
+        resetSizeSensors(0);
+        newState = readSizeSensors(0);
+
+        /* If the readinng is new, establish current block size */
+        if(newState != oldState)
+        {
+
+            if((newState == 0) && (oldState == 1))
+            {
+                printf("Small block on left belt");
+                createCloseGateTimer(0);
+            }
+            
+            /* Reset old state to current state */
+            oldState = newState;
+        }
+    }
+}
+
+void readRightSizeSensors(void)
+{
+    char newState = 0; 
+    char oldState = 0;
+
+    /* Continually reset and read sensors, operaing only upon change of state*/
+    while(1)
+    {
+        resetSizeSensors(1);
+        newState = readSizeSensors(1);
+
+        /* If the readinng is new, establish current block size */
+        if(newState != oldState)
+        {
+
+            if((newState == 0) && (oldState == 1))
+            {
+                printf("Small block on right belt");
+                createCloseGateTimer(1);
+            }
+            
+            /* Reset old state to current state */
+            oldState = newState;
+        }
+    }
+}
+
+void createTasks(void)
+{
+    /* Tasks for reading sensors on each belt*/
+    readLeftSensorsTaskId = taskSpawn("ReadLeftSensors",
+         100, 0, 20000, (FUNCPTR)readLeftSizeSensors, 0,0,0,0,0,0,0,0,0,0);
+
+    readLeftSensorsTaskId = taskSpawn("ReadRightSensors",
+         101, 0, 20000, (FUNCPTR)readRightSizeSensors, 0,0,0,0,0,0,0,0,0,0);
+    
+    /* Task for operating gates*/
+    operateGatesTaskId = taskSpawn("OperateGates",
+         99, 0, 20000, (FUNCPTR)OperateGates, 0,0,0,0,0,0,0,0,0,0);
+}
+
+
+void main(void)
+{
+	/*startMotor();
+
+	 createTasks();
+	
+	taskDelay(sysClkRateGet() * 10);
+	
+	*/stopMotor();
 }
 
 /*
