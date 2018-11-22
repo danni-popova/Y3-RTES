@@ -14,7 +14,7 @@ char rightGateFlag = 0;
 
 int readLeftSensorsTaskId, readRightSensorsTaskId, operateGatesTaskId; 
 
-void setGateFlag(char gate)
+void setGateFlagCallback(char gate)
 {
     if(gate == 0)
     {
@@ -39,7 +39,7 @@ void createCloseGateTimer(char gate)
 	
 	res = wdStart(clearGatesFlagTimer,
                   1 * sysClkRateGet(),
-                  (FUNCPTR)setGateFlag,
+                  (FUNCPTR)setGateFlagCallback,
                   gate);
 
 	if (res == ERROR) 
@@ -49,7 +49,7 @@ void createCloseGateTimer(char gate)
 	}
 }
 
-void clearFlags(char lGateState, char rGateState)
+void clearFlagsCallback(char lGateState, char rGateState)
 {
     if(lGateState == 1)
         leftGateFlag = 0;
@@ -60,6 +60,8 @@ void clearFlags(char lGateState, char rGateState)
 
 void createGateFlagResetTimer(char lGateState, char rGateState)
 {
+	printf("Creating flag reset timer");
+	
     int res;
 	WDOG_ID clearGatesFlagTimer = wdCreate();
 
@@ -71,7 +73,7 @@ void createGateFlagResetTimer(char lGateState, char rGateState)
 	
 	res = wdStart(clearGatesFlagTimer,
                   1 * sysClkRateGet(),
-                  (FUNCPTR)clearFlags,
+                  (FUNCPTR)clearFlagsCallback,
                   lGateState, rGateState);
 
 	if (res == ERROR) 
@@ -89,21 +91,25 @@ void OperateGates(void)
         
         if(leftGateFlag == 0 && rightGateFlag == 0)
         {
-            /* Open both gates */
+            printf("Opening both gates.");
+        	/* Open both gates */
             setGates(0);
         }
         if(leftGateFlag == 0 && rightGateFlag == 1)
         {
+        	printf("Opening left, closing right");
             /*  Open left, close right */
             setGates(1);
         }
         if(leftGateFlag == 1 && rightGateFlag == 0)
         {
+        	printf("Closing left, opening right");
             /* Close left, open right */
             setGates(2);
         }
         if(leftGateFlag == 1 && rightGateFlag == 1)
         {
+        	printf("Opening both gates");
             /* Open both */
             setGates(3);
         }
@@ -114,6 +120,8 @@ void OperateGates(void)
 
 void readLeftSizeSensors(void)
 {
+	printf("Read left sensors function starts.");
+	
     char newState = 0; 
     char oldState = 0;
 
@@ -141,6 +149,8 @@ void readLeftSizeSensors(void)
 
 void readRightSizeSensors(void)
 {
+	printf("Read right sensors function starts.");
+	
     char newState = 0; 
     char oldState = 0;
 
@@ -168,6 +178,8 @@ void readRightSizeSensors(void)
 
 void createTasks(void)
 {
+	printf("Creating tasks...");
+	
     /* Tasks for reading sensors on each belt*/
     readLeftSensorsTaskId = taskSpawn("ReadLeftSensors",
          100, 0, 20000, (FUNCPTR)readLeftSizeSensors, 0,0,0,0,0,0,0,0,0,0);
@@ -183,13 +195,13 @@ void createTasks(void)
 
 void main(void)
 {
-	/*startMotor();
+	startMotor();
 
-	 createTasks();
+	createTasks();
 	
 	taskDelay(sysClkRateGet() * 10);
 	
-	*/stopMotor();
+	stopMotor();
 }
 
 /*
