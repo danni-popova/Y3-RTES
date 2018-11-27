@@ -25,22 +25,24 @@ char LL[2] = {2, 3, 1}; // Do not count, do not influence gates, Do we need this
 char SL[2] = {0, 3, 1}; // Count AND influence gates
 char LS[2] = {2, 3, 0}; // Count AND influence gates
 char Reset[2] = {0, 0, 0};
-char GateState;
+char GateState; // Check and Set GateState before execution (after timer)
 char C0StartFlag;
 char C1StartFlag;
 // Need WatchDog timers depending on state
-// Close gate watchdog x3 times
+// Close gate watchdog x3 times, this can follow the sensor timer and depend upon buffer
 // Open gate watchdog time, then reset the GateState
 
 // // Possible addition is user settings to change mode.
 // void Settings(void){
 //   // Initial settings that can be altered by the user
 // }
-// void Interface(void){
-// // Shutdown
-//}
-//
 
+void Interface(void){
+  // Shutdown
+  // Poll for a keyboard input and respond accordinly
+}
+
+// Check whether the state has changed
 char identical(char a[], char b[]) {
     for (char i = 0 ; i < 3 ; ++i) {
         if (a[i] != b[i])
@@ -79,35 +81,43 @@ void AnalyseBlocks(void){
   }
 }
 
-void AnalyseConveyor0(){
+void AnalyseConveyor0(char BlockSize0){
   char BlockBuffer0[2] = {0};
   char State[3] = {0};
   while(1){
+    // Wait for message
     // If a sensor detects 1 for the first time, set the start flag
     if (BlockSize0 == 1 && C0StartFlag == 0){
       C0StartFlag = 1;
     }
     // Check Flag and that the next state isn't a duplicate
     if (C0StartFlag == 1 && BlockSize0 != BlockBuffer0[0]){
+      // Get Semaphore
       BlockBuffer0 = BufferFunction(BlockBuffer0, BlockSize0)
       State = AnalyseBlocks(BlockBuffer0);
-      // Analyse state and act accordingly
+      // Set timer depending upon buffer
+      // Once timer is up, check GateState, and set the variable accordingly
+      // Also need to get a semaphore so global variable is not set simultaneously
     }
   }
 }
 
-void AnalyseConveyor1(){
+void AnalyseConveyor1(char BlockSize1){
   char BlockBuffer1[2] = {0};
   char State[3] = {0};
   while(1){
+    // Wait for message
     // If a sensor detects 1 for the first time, set the start flag
     if (BlockSize1 == 1 && C1StartFlag == 0){
       C1StartFlag = 1;
     }
     if (C1StartFlag == 1 && BlockSize0 != BlockBuffer0[0]){
       BlockBuffer1 = BufferFunction(BlockBuffer1, BlockSize1)
+      // Get Semaphore
       State = AnalyseBlocks(BlockBuffer1);
-      // Analyse state and act accordingly
+      // Set timer depending upon buffer
+      // Once timer is up, check GateState, and set the variable accordingly
+      // Also need to get a semaphore so global variable is not set simultaneously
     }
   }
 }
@@ -125,57 +135,59 @@ void BufferFunction(char BlockBuffer[], char BlockSize){
 // This might be a function
 void CheckSensor(){
   while(1){
-    // Reset sensor before use
-    // Sensors MUST be read SYNCHRONOUSLY (every 'tick')
+  // Reset sensor before use
     char BlockSize0 = readSizeSensors(0);
-    // Send to analyses
+    // Send to analysis via message
     char BlockSize1 = readSizeSensors(1);
-    // Send to analyses
-
+    // Send to analysis via message
   }
 }
 
 void MotorController(char GateState){
-  // Gate controller operation controls both gates
-  // Recieve msg from Buffer and control gates correspondingly
-  // Gates need to stay open for a certain amount of time so this should be
-  // amended accordingly
-  // Recieve DOWN or UP or BOTH from buffers, compare buffers for both belts
+// Gates need to stay open for a certain amount of time so this should be
+// amended accordingly
   setGates(char GateState);
-  // Send message to count sensor to read the count sensor at correct time
+  // Set timer to read the count sensor at correct time
+  // Check GateState before closing gate again
 }
 
-// void Feedback(){
-//   // User interface that returns number of large blocks detected,
-//   // snall blocks detected and large blocks collected.
-//   // Includes error catching and shutdown option.
-//   // Shutdown option may need to be an interrupt to override operations.
-// }
+void Feedback(){
+  // Read count sensor and store info for Interface to read
+  // User interface that returns number of large blocks detected,
+  // snall blocks detected and large blocks collected.
+  // Includes error catching and shutdown option.
+  // Shutdown option may need to be an interrupt to override operations.
+}
 
 void Main(void){
   startMotor();
-  while(1){
-    int CheckSensor_id;
-    int MotorController_id;
+  int CheckSensor_id;
+  int MotorController_id;
+  int AnalyseConveyor0_id;
+  int AnalyseConveyor1_id;
 
-    // Setup that can be configured via the interface (include later)
-    //Settings();
+  // Setup that can be configured via the interface (include later)
+  //Settings();
 
-    // Poll for a keyboard input and respond accordinly
-    // This can be a Task
-    // Message queue for keyboard inputs
-    // Interface();
+  // Check sensors and Count operation
+  // readSizeSensors returns 0, 1, 2, 3 for no object, sensor 1, sensor 2, and
+  // sensor 1 & 2, respectively.
+  // The conveyor parameter distinguishes which conveyor is being checked.
+  // Input is either 0 or 1.
+  CheckSensor_id = taskSpawn("CheckSensor", 100, 0, 20000,
+                      (FUNCPTR)CheckSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
-    // Check sensors and Count operation
-    // readSizeSensors returns 0, 1, 2, 3 for no object, sensor 1, sensor 2, and
-    // sensor 1 & 2, respectively.
-    // The conveyor parameter distinguishes which conveyor is being checked.
-    // Input is either 0 or 1.
-    CheckSensor_id = taskSpawn("CheckSensor", 100, 0, 20000,
-                        (FUNCPTR)CheckSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
+  AnalyseConveyor0_id = taskSpawn("AnalyseConveyor0", 99, 0, 20000,
+                      (FUNCPTR)AnalyseConveyor0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
-    // Does this need to be a task?
-    MotorController_id = taskSpawn("MotorController", 100, 0, 20000,
-                        (FUNCPTR)MotorController, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
-  }
+  AnalyseConveyor1_id = taskSpawn("AnalyseConveyor1", 99, 0, 20000,
+                      (FUNCPTR)AnalyseConveyor1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
+  // Does this need to be a task?
+  MotorController_id = taskSpawn("MotorController", 99, 0, 20000,
+                      (FUNCPTR)MotorController, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
+
+    while(1){
+      // Loops forever and let the tasks/functions sort themselves out.
+      // Show debug prints here
+    }
 }
