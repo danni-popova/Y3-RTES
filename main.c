@@ -39,7 +39,7 @@ char C1StartFlag;
 
 void Interface(void){
   // Shutdown
-  // Poll for a keyboard input and respond accordinly
+  // Poll for a keyboard input and respond accordingly
 }
 
 // Check whether the state has changed
@@ -131,8 +131,6 @@ void BufferFunction(char BlockBuffer[], char BlockSize){
     return BlockBuffer;
 }
 
-// How fast to poll the sensors?
-// This might be a function
 void CheckSensor(){
   while(1){
   // Reset sensor before use
