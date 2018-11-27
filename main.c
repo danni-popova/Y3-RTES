@@ -165,15 +165,11 @@ void Main(void){
   int MotorController_id;
   int AnalyseConveyor0_id;
   int AnalyseConveyor1_id;
-
-  // Setup that can be configured via the interface (include later)
-  //Settings();
-
-  // Check sensors and Count operation
-  // readSizeSensors returns 0, 1, 2, 3 for no object, sensor 1, sensor 2, and
-  // sensor 1 & 2, respectively.
-  // The conveyor parameter distinguishes which conveyor is being checked.
-  // Input is either 0 or 1.
+// Check sensors and Count operation
+// readSizeSensors returns 0, 1, 2, 3 for no object, sensor 1, sensor 2, and
+// sensor 1 & 2, respectively.
+// The conveyor parameter distinguishes which conveyor is being checked.
+// Input is either 0 or 1.
   CheckSensor_id = taskSpawn("CheckSensor", 100, 0, 20000,
                       (FUNCPTR)CheckSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
