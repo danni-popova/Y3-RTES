@@ -30,13 +30,9 @@ char ResetFlag;
 char GateState; // Check and Set GateState before execution (after timer)
 char C0StartFlag;
 char C1StartFlag;
-char T1Flag = 0; // Flag indicates to clossing timer to be set
 WD_ID timer_T1_ID; // Opening timer for conveyor 0
-char T2Flag = 0;
 WD_ID timer_T2_ID; // Opening timer for conveyor 1
-char T3Flag = 0; // Needed?
 WD_ID timer_T3_ID; // Closing timer for conveyor 0
-char T4Flag = 0; // Needed?
 WD_ID timer_T4_ID; // Closing timer for conveyor 1
 MSG_Q_ID queue0ID;
 MSG_Q_ID queue1ID;
@@ -47,7 +43,6 @@ SEM_ID MotorStateSemID;
 // Close gate watchdog x3 times, this can follow the sensor timer and depend upon buffer
 // Open gate watchdog time, then reset the GateState
 void TimerT1Callback(void){
-  T1Flag = 1;
   // Carry out gatestate check code here for open gate
   // Wait for semaphore
   semTake(MotorStateSemID, WAIT_FOREVER);
@@ -57,7 +52,6 @@ void TimerT1Callback(void){
   // Send message to MotorController
 }
 void TimerT2Callback(void){
-  T2Flag = 1;
   // Carry out gatestate check code here for open gate
   // Wait for semaphore
   semTake(MotorStateSemID, WAIT_FOREVER);
@@ -67,12 +61,18 @@ void TimerT2Callback(void){
   // Send message to MotorController
 }
 void TimerT3Callback(void){
-  T3Flag = 1; // ?
   // Carry out gatestate check code here for close gate
+  semTake(MotorStateSemID, WAIT_FOREVER);
+  // Check gate state
+  // Alter gate state
+  semGive(MotorStateSemID)
 }
 void TimerT4Callback(void){
-  T4Flag = 1; // ?
   // Carry out gatestate check code here for close gate
+  semTake(MotorStateSemID, WAIT_FOREVER);
+  // Check gate state
+  // Alter gate state
+  semGive(MotorStateSemID)
 }
 
 // // Possible addition is user settings to change mode.
