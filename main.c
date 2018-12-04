@@ -29,7 +29,7 @@ char Reset[2] = {0, 0, 0}; // State 6
 char GateState; // Check and Set GateState before execution (after timer)
 char C0StartFlag;
 char C1StartFlag;
-char T1Flag = 0;
+char T1Flag = 0; //  ARE THESE FLAGS NECCESSARY?
 WD_ID timer_T1_ID; // Opening timer for conveyor 0
 char T2Flag = 0;
 WD_ID timer_T2_ID; // Opening timer for conveyor 1
@@ -42,14 +42,22 @@ WD_ID timer_T4_ID; // Closing timer for conveyor 1
 // Close gate watchdog x3 times, this can follow the sensor timer and depend upon buffer
 // Open gate watchdog time, then reset the GateState
 void TimerT1Callback(void){
-  flag = 1;
+  T1Flag = 1;
+  // Carry out gatestate check code here for open gate
 }
 void TimerT2Callback(void){
-  flag = 1;
+  T2Flag = 1;
+  // Carry out gatestate check code here for open gate
 }
 void TimerT3Callback(void){
-  flag = 1;
+  T3Flag = 1;
+  // Carry out gatestate check code here for close gate
 }
+void TimerT4Callback(void){
+  T4Flag = 1;
+  // Carry out gatestate check code here for close gate
+}
+
 // // Possible addition is user settings to change mode.
 // void Settings(void){
 //   // Initial settings that can be altered by the user
@@ -71,16 +79,6 @@ char identical(char a[], char b[]) {
 
 // This is a function that the conveyors will need to SHARE
 void AnalyseBlocks(void){
-  // small (1) == 1, 0 -- Use for counting (?) -- Send DOWN to MotorController with Default timing
-  // small (2) == 3, 0 -- Use for counting (?) -- Send DOWN with Default timing
-  // large == 1, 3 -- Use for counting (?) -- Send UP with Default timing
-  // 1 small == 1, 0, 2 -- Count?
-  // 1 large == 1, 1, 3 OR 1, 3, 2 -- Count?
-  // 2 small == 0, 3, 0 -- Send DOWN with Long timing (?)
-  // 2 large == 2, 3, 1 --  Send UP with Long timing (?)
-  // large then small == 2, 3, 0 -- Send UPDOWN
-  // small then large == 0, 3, 1 -- Send DOWNUP
-  // end 'bit' == 2, 0
   char Logic[5]; {S, L, SS, LL, SL, LS};
 
   // If array contains correct message code, send message of what the MotorController
@@ -92,10 +90,11 @@ void AnalyseBlocks(void){
       State = identical(Logic[i], BlockBuffer);
       if (State == 1){
         // Pass message to Gates
-        return Logic[i]; // If i == 6 then Reset flag
+        return Logic[i]; // If i == 6 then Reset flag NEED TO IMPLEMENT
         break;
       }
     }
+    return 7;
   }
 }
 
@@ -125,17 +124,19 @@ void AnalyseConveyor0(char BlockSize0){
       // Set timer depending upon buffer
       int timeinseconds;
       switch(State){
-        case 1 : timeinseconds = /*TIME1*/;
+        case 1 : timeinseconds = /*TIME1*/; // S
                  break;
-        case 2 : timeinseconds = /*TIME1*/;
+        case 2 : timeinseconds = /*TIME1*/; // L
                  break;
-        case 3 : timeinseconds = /*TIME2*/;
+        case 3 : timeinseconds = /*TIME2*/; // SS
                  break;
-        case 4 : timeinseconds = /*TIME3*/;
+        case 4 : timeinseconds = /*TIME3*/; // LL
                  break;
-        case 5 : timeinseconds = /*TIME2*/;
+        case 5 : timeinseconds = /*TIME2*/; // SL
                  break;
-        case 6 : timeinseconds = /*TIME3*/;
+        case 6 : timeinseconds = /*TIME3*/; // LS
+                 break;
+        case 7 : /* No compatible state, do not set timer */;
                  break;
         default : printf("ERROR: Unknown State in state machine!!");
                   break;
@@ -149,7 +150,7 @@ void AnalyseConveyor0(char BlockSize0){
         exit(0);
       }
       // Timer is started at a timer dependent upon the buffer.
-      res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1TimerT1Callback, 0);
+      res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, 0);
 
       if (res == ERROR){
         printf("Cannot start the timer! Terminating...");
@@ -175,23 +176,46 @@ void AnalyseConveyor1(char BlockSize1){
       BlockBuffer1 = BufferFunction(BlockBuffer1, BlockSize1)
       // Get Semaphore
       State = AnalyseBlocks(BlockBuffer1);
+
       // Set timer depending upon buffer
-      int res;
-      timer_T2_ID = wdCreate();
-
-      if (timer_T2_ID == NULL){
-        printf("Cannot create timer! Terminating this task...");
-        exit(0);
+      int timeinseconds;
+      switch(State){
+        case 1 : timeinseconds = /*TIME1*/; // S
+                 break;
+        case 2 : timeinseconds = /*TIME1*/; // L
+                 break;
+        case 3 : timeinseconds = /*TIME2*/; // SS
+                 break;
+        case 4 : timeinseconds = /*TIME3*/; // LL
+                 break;
+        case 5 : timeinseconds = /*TIME2*/; // SL
+                 break;
+        case 6 : timeinseconds = /*TIME3*/; // LS
+                 break;
+        case 7 : /* No compatible state, do not set timer */;
+                 break;
+        default : printf("ERROR: Unknown State in state machine!!");
+                  break;
       }
-      // Timer is started at a timer dependent upon the buffer.
-      res = wdStart(timer_T2_ID, TIMEINSECONDS*sysClkRateGet(), (FUNCPTR)TimerT2TimerT1Callback, 0);
+      // Do not execute this section if State == RESET | NO STATE
+      if (State < 6){
+        int res;
+        timer_T2_ID = wdCreate();
 
-      if (res == ERROR){
-        printf("Cannot start the timer! Terminating...");
-        exit(0);
+        if (timer_T2_ID == NULL){
+          printf("Cannot create timer! Terminating this task...");
+          exit(0);
+        }
+        // Timer is started at a timer dependent upon the buffer.
+        res = wdStart(timer_T2_ID, TIMEINSECONDS*sysClkRateGet(), (FUNCPTR)TimerT2Callback, 0);
+
+        if (res == ERROR){
+          printf("Cannot start the timer! Terminating...");
+          exit(0);
+        }
+        // Once timer is up, check GateState, and set the variable accordingly
+        // Also need to get a semaphore so global variable is not set simultaneously
       }
-      // Once timer is up, check GateState, and set the variable accordingly
-      // Also need to get a semaphore so global variable is not set simultaneously
     }
   }
 }
@@ -250,3 +274,15 @@ void Main(void){
       // Show debug prints here
     }
 }
+
+// N.B.
+// small (1) == 1, 0 -- Use for counting (?) -- Send DOWN to MotorController with Default timing
+// small (2) == 3, 0 -- Use for counting (?) -- Send DOWN with Default timing
+// large == 1, 3 -- Use for counting (?) -- Send UP with Default timing
+// 1 small == 1, 0, 2 -- Count?
+// 1 large == 1, 1, 3 OR 1, 3, 2 -- Count?
+// 2 small == 0, 3, 0 -- Send DOWN with Long timing (?)
+// 2 large == 2, 3, 1 --  Send UP with Long timing (?)
+// large then small == 2, 3, 0 -- Send UPDOWN
+// small then large == 0, 3, 1 -- Send DOWNUP
+// end 'bit' == 2, 0
