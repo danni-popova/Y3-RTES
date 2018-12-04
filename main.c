@@ -30,16 +30,26 @@ char GateState; // Check and Set GateState before execution (after timer)
 char C0StartFlag;
 char C1StartFlag;
 char T1Flag = 0;
-WD_ID timer_T1_ID;
+WD_ID timer_T1_ID; // Opening timer for conveyor 0
 char T2Flag = 0;
-WD_ID timer_T2_ID;
+WD_ID timer_T2_ID; // Opening timer for conveyor 1
 char T3Flag = 0;
-WD_ID timer_T3_ID;
+WD_ID timer_T3_ID; // Closing timer for conveyor 0
+char T4Flag = 0;
+WD_ID timer_T4_ID; // Closing timer for conveyor 1
 
 // Need WatchDog timers depending on state
 // Close gate watchdog x3 times, this can follow the sensor timer and depend upon buffer
 // Open gate watchdog time, then reset the GateState
-
+void TimerT1Callback(void){
+  flag = 1;
+}
+void TimerT2Callback(void){
+  flag = 1;
+}
+void TimerT3Callback(void){
+  flag = 1;
+}
 // // Possible addition is user settings to change mode.
 // void Settings(void){
 //   // Initial settings that can be altered by the user
@@ -113,6 +123,21 @@ void AnalyseConveyor0(char BlockSize0){
       BlockBuffer0 = BufferFunction(BlockBuffer0, BlockSize0)
       State = AnalyseBlocks(BlockBuffer0);
       // Set timer depending upon buffer
+      int res;
+      timer_T1_ID = wdCreate();
+
+      if (timer_T1_ID == NULL){
+        printf("Cannot create timer! Terminating this task...");
+        exit(0);
+      }
+      // Timer is started at a timer dependent upon the buffer.
+      res = wdStart(timer_T1_ID, TIMEINSECONDS*sysClkRateGet(), (FUNCPTR)TimerT1TimerT1Callback, 0);
+
+      if (res == ERROR){
+        printf("Cannot start the timer! Terminating...");
+        exit(0);
+      }
+
       // Once timer is up, check GateState, and set the variable accordingly
       // Also need to get a semaphore so global variable is not set simultaneously
     }
@@ -133,6 +158,20 @@ void AnalyseConveyor1(char BlockSize1){
       // Get Semaphore
       State = AnalyseBlocks(BlockBuffer1);
       // Set timer depending upon buffer
+      int res;
+      timer_T2_ID = wdCreate();
+
+      if (timer_T2_ID == NULL){
+        printf("Cannot create timer! Terminating this task...");
+        exit(0);
+      }
+      // Timer is started at a timer dependent upon the buffer.
+      res = wdStart(timer_T2_ID, TIMEINSECONDS*sysClkRateGet(), (FUNCPTR)TimerT2TimerT1Callback, 0);
+
+      if (res == ERROR){
+        printf("Cannot start the timer! Terminating...");
+        exit(0);
+      }
       // Once timer is up, check GateState, and set the variable accordingly
       // Also need to get a semaphore so global variable is not set simultaneously
     }
