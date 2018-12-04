@@ -25,7 +25,8 @@ char SS[2] = {0, 3, 0}; // Do not count, Influence gates // State 2
 char LL[2] = {2, 3, 1}; // Do not count, do not influence gates, Do we need this? // State 3
 char SL[2] = {0, 3, 1}; // Count AND influence gates // State 4
 char LS[2] = {2, 3, 0}; // Count AND influence gates // State 5
-char Reset[2] = {0, 0, 0}; // State 6
+char ResetState[2] = {0, 0, 0}; // State 6
+char ResetFlag;
 char GateState; // Check and Set GateState before execution (after timer)
 char C0StartFlag;
 char C1StartFlag;
@@ -65,6 +66,7 @@ void TimerT4Callback(void){
 
 void Interface(void){
   // Shutdown
+  // Restart
   // Poll for a keyboard input and respond accordingly
 }
 
@@ -86,6 +88,9 @@ void AnalyseBlocks(void){
   // Send count msg to Interface
   while(1){
     State = 0;
+    if (ResetFlag == 1){
+      return 6; // If i == 6 then Reset flag
+    }
     for (char i = 0; i < 5; i++){
       State = identical(Logic[i], BlockBuffer);
       if (State == 1){
@@ -124,19 +129,21 @@ void AnalyseConveyor0(char BlockSize0){
       // Set timer depending upon buffer
       int timeinseconds;
       switch(State){
-        case 1 : timeinseconds = /*TIME1*/; // S
+        case 0 : timeinseconds = /*TIME1*/; // S
                  break;
-        case 2 : timeinseconds = /*TIME1*/; // L
+        case 1 : timeinseconds = /*TIME1*/; // L
                  break;
-        case 3 : timeinseconds = /*TIME2*/; // SS
+        case 2 : timeinseconds = /*TIME2*/; // SS
                  break;
-        case 4 : timeinseconds = /*TIME3*/; // LL
+        case 3 : timeinseconds = /*TIME3*/; // LL
                  break;
-        case 5 : timeinseconds = /*TIME2*/; // SL
+        case 4 : timeinseconds = /*TIME2*/; // SL
                  break;
-        case 6 : timeinseconds = /*TIME3*/; // LS
+        case 5 : timeinseconds = /*TIME3*/; // LS
                  break;
-        case 7 : /* No compatible state, do not set timer */;
+        case 6 : BlockBuffer0[2] = {0}; // Reset
+                 break;
+        case 7 : // No State Change
                  break;
         default : printf("ERROR: Unknown State in state machine!!");
                   break;
@@ -172,7 +179,9 @@ void AnalyseConveyor1(char BlockSize1){
     if (BlockSize1 == 1 && C1StartFlag == 0){
       C1StartFlag = 1;
     }
-    if (C1StartFlag == 1 && BlockSize0 != BlockBuffer0[0]){
+    // Run if StartFlag is set and the sensor reading is not the same
+    // as the previous sensor reading
+    if (C1StartFlag == 1 && BlockSize1 != BlockBuffer1[0]){
       BlockBuffer1 = BufferFunction(BlockBuffer1, BlockSize1)
       // Get Semaphore
       State = AnalyseBlocks(BlockBuffer1);
@@ -180,19 +189,21 @@ void AnalyseConveyor1(char BlockSize1){
       // Set timer depending upon buffer
       int timeinseconds;
       switch(State){
-        case 1 : timeinseconds = /*TIME1*/; // S
+        case 0 : timeinseconds = /*TIME1*/; // S
                  break;
-        case 2 : timeinseconds = /*TIME1*/; // L
+        case 1 : timeinseconds = /*TIME1*/; // L
                  break;
-        case 3 : timeinseconds = /*TIME2*/; // SS
+        case 2 : timeinseconds = /*TIME2*/; // SS
                  break;
-        case 4 : timeinseconds = /*TIME3*/; // LL
+        case 3 : timeinseconds = /*TIME3*/; // LL
                  break;
-        case 5 : timeinseconds = /*TIME2*/; // SL
+        case 4 : timeinseconds = /*TIME2*/; // SL
                  break;
-        case 6 : timeinseconds = /*TIME3*/; // LS
+        case 5 : timeinseconds = /*TIME3*/; // LS
                  break;
-        case 7 : /* No compatible state, do not set timer */;
+        case 6 : BlockBuffer1[2] = {0}; // Reset
+                 break;
+        case 7 : // No State change
                  break;
         default : printf("ERROR: Unknown State in state machine!!");
                   break;
@@ -260,18 +271,19 @@ void Main(void){
   CheckSensor_id = taskSpawn("CheckSensor", 100, 0, 20000,
                       (FUNCPTR)CheckSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
-  AnalyseConveyor0_id = taskSpawn("AnalyseConveyor0", 99, 0, 20000,
+  AnalyseConveyor0_id = taskSpawn("AnalyseConveyor0", 101, 0, 20000,
                       (FUNCPTR)AnalyseConveyor0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
-  AnalyseConveyor1_id = taskSpawn("AnalyseConveyor1", 99, 0, 20000,
+  AnalyseConveyor1_id = taskSpawn("AnalyseConveyor1", 101, 0, 20000,
                       (FUNCPTR)AnalyseConveyor1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
   // Does this need to be a task?
-  MotorController_id = taskSpawn("MotorController", 99, 0, 20000,
-                      (FUNCPTR)MotorController, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
+  //MotorController_id = taskSpawn("MotorController", 99, 0, 20000,
+  //                    (FUNCPTR)MotorController, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
     while(1){
       // Loops forever and let the tasks/functions sort themselves out.
-      // Show debug prints here
+      // Show debug prints here?
+      // Should this be a while(1)??
     }
 }
 
