@@ -17,6 +17,7 @@
 #include <taskLib.h>
 #include <stdlib.h>
 #include <ioLib.h>
+#include "time.h"
 
 char S[2] = {1, 0, 2}; // Do not count, Influence gates
 char L[2] = {1, 3, 2}; // Only count, do not influence gates
@@ -28,6 +29,13 @@ char Reset[2] = {0, 0, 0};
 char GateState; // Check and Set GateState before execution (after timer)
 char C0StartFlag;
 char C1StartFlag;
+char T1Flag = 0;
+WD_ID timer_T1_ID;
+char T2Flag = 0;
+WD_ID timer_T2_ID;
+char T3Flag = 0;
+WD_ID timer_T3_ID;
+
 // Need WatchDog timers depending on state
 // Close gate watchdog x3 times, this can follow the sensor timer and depend upon buffer
 // Open gate watchdog time, then reset the GateState
@@ -81,6 +89,15 @@ void AnalyseBlocks(void){
   }
 }
 
+// Shifts states in the buffer along
+void BufferFunction(char BlockBuffer[], char BlockSize){
+    for (char i = 1; i < 3; i--) {
+      BlockBuffer[i] = BlockBuffer[i-1]
+    }
+    BlockBuffer[0] = BlockSize;
+    return BlockBuffer;
+}
+
 void AnalyseConveyor0(char BlockSize0){
   char BlockBuffer0[2] = {0};
   char State[3] = {0};
@@ -120,15 +137,6 @@ void AnalyseConveyor1(char BlockSize1){
       // Also need to get a semaphore so global variable is not set simultaneously
     }
   }
-}
-
-// Shifts states in the buffer along
-void BufferFunction(char BlockBuffer[], char BlockSize){
-    for (char i = 1; i < 3; i--) {
-      BlockBuffer[i] = BlockBuffer[i-1]
-    }
-    BlockBuffer[0] = BlockSize;
-    return BlockBuffer;
 }
 
 void CheckSensor(){
