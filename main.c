@@ -53,6 +53,7 @@ void TimerT1Callback(void){
   semTake(MotorStateSemID, WAIT_FOREVER);
   // Check gate state
   // Alter gate state
+  semGive(MotorStateSemID)
   // Send message to MotorController
 }
 void TimerT2Callback(void){
@@ -62,6 +63,7 @@ void TimerT2Callback(void){
   semTake(MotorStateSemID, WAIT_FOREVER);
   // Check gate state
   // Alter gate state
+  semGive(MotorStateSemID)
   // Send message to MotorController
 }
 void TimerT3Callback(void){
@@ -144,9 +146,10 @@ void AnalyseConveyor0(){
     if (C0StartFlag == 1 && BlockSize0 != BlockBuffer0[0]){
       // Get Semaphore
       semTake(AnalyseBlocksSemID, WAIT_FOREVER);
-
       BlockBuffer0 = BufferFunction(BlockBuffer0, BlockSize0)
       State = AnalyseBlocks(BlockBuffer0);
+      // Free the semaphore
+      semGive(AnalyseBlocksSemID);
       // Set timer depending upon buffer
       int timeinseconds;
       switch(State){
@@ -208,10 +211,12 @@ void AnalyseConveyor1(){
     // Run if StartFlag is set and the sensor reading is not the same
     // as the previous sensor reading
     if (C1StartFlag == 1 && BlockSize1 != BlockBuffer1[0]){
-      BlockBuffer1 = BufferFunction(BlockBuffer1, BlockSize1)
       // Get Semaphore
       semTake(AnalyseBlocksSemID, WAIT_FOREVER);
+      BlockBuffer1 = BufferFunction(BlockBuffer1, BlockSize1)
       State = AnalyseBlocks(BlockBuffer1);
+      // Free the semaphore
+      semGive(AnalyseBlocksSemID);
 
       // Set timer depending upon buffer
       int timeinseconds;
@@ -313,12 +318,12 @@ void Main(void){
     exit(0);
   }
   // Set up semaphores
-  AnalyseBlocksSemID = semBCreate(SEM_Q_FIFO, SEM_EMPTY);
+  AnalyseBlocksSemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
   if (AnalyseBlocksSemID == NULL){
     printf("Cannot create analysis semaphore! Terminating...");
     exit(0);
   }
-  MotorStateSemID = semBCreate(SEM_Q_FIFO, SEM_EMPTY);
+  MotorStateSemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
   if (MotorStateSemID == NULL){
     printf("Cannot create analysis semaphore! Terminating...");
     exit(0);
