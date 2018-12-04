@@ -136,6 +136,7 @@ void AnalyseConveyor0(){
   if (timer_T1_ID == NULL){
     printf("Cannot create timer! Terminating this task...");
     exit(0);
+  }
   while(1){
     // Wait for message
     res = msgQRecieve(queue0ID, &BlockSize0, 1, WAIT_FOREVER);
@@ -157,67 +158,65 @@ void AnalyseConveyor0(){
       semGive(AnalyseBlocksSemID);
       // Set timer depending upon buffer
       int timeinseconds;
-      switch(State){
-        case 0 : timeinseconds = /*TIME1*/; // S
-                 res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, State);
-                 if (res == ERROR){
-                   printf("Cannot start the timer! Terminating...");
-                   exit(0);
-                 }
-                 break;
-        case 1 : timeinseconds = /*TIME1*/; // L
-                  res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
-                  if (res == ERROR){
-                    printf("Cannot start the timer! Terminating...");
-                    exit(0);
-                  }
-                 break;
-        case 2 : timeinseconds = /*TIME2*/; // SS
-                  res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
-                  if (res == ERROR){
-                    printf("Cannot start the timer! Terminating...");
-                    exit(0);
-                  }
-                 break;
-        case 3 : timeinseconds = /*TIME3*/; // LL
-                  res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
-                  if (res == ERROR){
-                    printf("Cannot start the timer! Terminating...");
-                    exit(0);
-                  }
-                 break;
-        case 4 : timeinseconds = /*TIME2*/; // SL
-                  res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
-                  if (res == ERROR){
-                    printf("Cannot start the timer! Terminating...");
-                    exit(0);
-                  }
-                 break;
-        case 5 : timeinseconds = /*TIME3*/; // LS
-                  res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
-                  if (res == ERROR){
-                    printf("Cannot start the timer! Terminating...");
-                    exit(0);
-                  }
-                 break;
-        case 6 : BlockBuffer0[2] = {0}; // Reset
-                 C0StartFlag == 0;
-                 break;
-        case 7 : // No State Change
-                 break;
-        default : printf("ERROR: Unknown State in state machine!!");
-                  break;
-      }
+      if (State < 7){
+        switch(State){
+          case 0 : timeinseconds = /*TIME1*/; // S
+                   res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, State);
+                   if (res == ERROR){
+                     printf("Cannot start the timer! Terminating...");
+                     exit(0);
+                   }
+                   break;
+          case 1 : timeinseconds = /*TIME1*/; // L
+                    res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
+                    if (res == ERROR){
+                      printf("Cannot start the timer! Terminating...");
+                      exit(0);
+                    }
+                   break;
+          case 2 : timeinseconds = /*TIME2*/; // SS
+                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
+                    if (res == ERROR){
+                      printf("Cannot start the timer! Terminating...");
+                      exit(0);
+                    }
+                   break;
+          case 3 : timeinseconds = /*TIME3*/; // LL
+                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
+                    if (res == ERROR){
+                      printf("Cannot start the timer! Terminating...");
+                      exit(0);
+                    }
+                   break;
+          case 4 : timeinseconds = /*TIME2*/; // SL
+                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
+                    if (res == ERROR){
+                      printf("Cannot start the timer! Terminating...");
+                      exit(0);
+                    }
+                   break;
+          case 5 : timeinseconds = /*TIME3*/; // LS
+                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
+                    if (res == ERROR){
+                      printf("Cannot start the timer! Terminating...");
+                      exit(0);
+                    }
+                   break;
+          case 6 : BlockBuffer0[2] = {0}; // Reset
+                   C0StartFlag == 0;
+                   break;
+          default : printf("ERROR: Unknown State in state machine!!");
+                    break;
         }
-
+      }
+    }
         // Once timer is up, check GateState, and set the variable accordingly
         // Also need to get a semaphore so global variable is not set simultaneously
         // Reset flag
         //C0StartFlag == 0;
-      }
-    }
   }
 }
+
 
 void AnalyseConveyor1(){
   char BlockBuffer1[2] = {0};
@@ -251,62 +250,63 @@ void AnalyseConveyor1(){
 
       // Set timer depending upon buffer
       int timeinseconds;
-      switch(State){
-        case 0 : timeinseconds = /*TIME1*/; // S
-                 res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
-                 if (res == ERROR){
-                   printf("Cannot start the timer! Terminating...");
-                   exit(0);
-                 }
-                 break;
-        case 1 : timeinseconds = /*TIME1*/; // L
-                  res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
-                  if (res == ERROR){
-                    printf("Cannot start the timer! Terminating...");
-                    exit(0);
-                  }
-                 break;
-        case 2 : timeinseconds = /*TIME2*/; // SS
-                  res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
-                  if (res == ERROR){
-                    printf("Cannot start the timer! Terminating...");
-                    exit(0);
-                  }
-                 break;
-        case 3 : timeinseconds = /*TIME3*/; // LL
-                  res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
-                  if (res == ERROR){
-                    printf("Cannot start the timer! Terminating...");
-                    exit(0);
-                  }
-                 break;
-        case 4 : timeinseconds = /*TIME2*/; // SL
-                  res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
-                  if (res == ERROR){
-                    printf("Cannot start the timer! Terminating...");
-                    exit(0);
-                  }
-                 break;
-        case 5 : timeinseconds = /*TIME3*/; // LS
-                  res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
-                  if (res == ERROR){
-                    printf("Cannot start the timer! Terminating...");
-                    exit(0);
-                  }
-                 break;
-        case 6 : BlockBuffer1[2] = {0}; // Reset
-                 C1StartFlag == 0;
-                 break;
-        case 7 : // No State change
-                 break;
-        default : printf("ERROR: Unknown State in state machine!!");
-                  break;
+      if (State < 7){
+        switch(State){
+          case 0 : timeinseconds = /*TIME1*/; // S
+                   res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
+                   if (res == ERROR){
+                     printf("Cannot start the timer! Terminating...");
+                     exit(0);
+                   }
+                   break;
+          case 1 : timeinseconds = /*TIME1*/; // L
+                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
+                    if (res == ERROR){
+                      printf("Cannot start the timer! Terminating...");
+                      exit(0);
+                    }
+                   break;
+          case 2 : timeinseconds = /*TIME2*/; // SS
+                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
+                    if (res == ERROR){
+                      printf("Cannot start the timer! Terminating...");
+                      exit(0);
+                    }
+                   break;
+          case 3 : timeinseconds = /*TIME3*/; // LL
+                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
+                    if (res == ERROR){
+                      printf("Cannot start the timer! Terminating...");
+                      exit(0);
+                    }
+                   break;
+          case 4 : timeinseconds = /*TIME2*/; // SL
+                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
+                    if (res == ERROR){
+                      printf("Cannot start the timer! Terminating...");
+                      exit(0);
+                    }
+                   break;
+          case 5 : timeinseconds = /*TIME3*/; // LS
+                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
+                    if (res == ERROR){
+                      printf("Cannot start the timer! Terminating...");
+                      exit(0);
+                    }
+                   break;
+          case 6 : BlockBuffer1[2] = {0}; // Reset
+                   C1StartFlag == 0;
+                   break;
+          case 7 : // No State change
+                   break;
+          default : printf("ERROR: Unknown State in state machine!!");
+                    break;
+        }
       }
         // Once timer is up, check GateState, and set the variable accordingly
         // Also need to get a semaphore so global variable is not set simultaneously
         // Reset flag
       //  C1StartFlag == 0;
-      }
     }
   }
 }
