@@ -19,13 +19,13 @@
 #include <ioLib.h>
 #include "time.h"
 
-char S[2] = {1, 0, 2}; // Do not count, Influence gates
-char L[2] = {1, 3, 2}; // Only count, do not influence gates
-char SS[2] = {0, 3, 0}; // Do not count, Influence gates
-char LL[2] = {2, 3, 1}; // Do not count, do not influence gates, Do we need this?
-char SL[2] = {0, 3, 1}; // Count AND influence gates
-char LS[2] = {2, 3, 0}; // Count AND influence gates
-char Reset[2] = {0, 0, 0};
+char S[2] = {1, 0, 2}; // Do not count, Influence gates // State 0
+char L[2] = {1, 3, 2}; // Only count, do not influence gates // State 1
+char SS[2] = {0, 3, 0}; // Do not count, Influence gates // State 2
+char LL[2] = {2, 3, 1}; // Do not count, do not influence gates, Do we need this? // State 3
+char SL[2] = {0, 3, 1}; // Count AND influence gates // State 4
+char LS[2] = {2, 3, 0}; // Count AND influence gates // State 5
+char Reset[2] = {0, 0, 0}; // State 6
 char GateState; // Check and Set GateState before execution (after timer)
 char C0StartFlag;
 char C1StartFlag;
@@ -123,6 +123,24 @@ void AnalyseConveyor0(char BlockSize0){
       BlockBuffer0 = BufferFunction(BlockBuffer0, BlockSize0)
       State = AnalyseBlocks(BlockBuffer0);
       // Set timer depending upon buffer
+      int timeinseconds;
+      switch(State){
+        case 1 : timeinseconds = /*TIME1*/;
+                 break;
+        case 2 : timeinseconds = /*TIME1*/;
+                 break;
+        case 3 : timeinseconds = /*TIME2*/;
+                 break;
+        case 4 : timeinseconds = /*TIME3*/;
+                 break;
+        case 5 : timeinseconds = /*TIME2*/;
+                 break;
+        case 6 : timeinseconds = /*TIME3*/;
+                 break;
+        default : printf("ERROR: Unknown State in state machine!!");
+                  break;
+      }
+
       int res;
       timer_T1_ID = wdCreate();
 
@@ -131,7 +149,7 @@ void AnalyseConveyor0(char BlockSize0){
         exit(0);
       }
       // Timer is started at a timer dependent upon the buffer.
-      res = wdStart(timer_T1_ID, TIMEINSECONDS*sysClkRateGet(), (FUNCPTR)TimerT1TimerT1Callback, 0);
+      res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1TimerT1Callback, 0);
 
       if (res == ERROR){
         printf("Cannot start the timer! Terminating...");
