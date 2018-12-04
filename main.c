@@ -166,30 +166,35 @@ void AnalyseConveyor0(){
         case 5 : timeinseconds = /*TIME3*/; // LS
                  break;
         case 6 : BlockBuffer0[2] = {0}; // Reset
+                 C0StartFlag == 0;
                  break;
         case 7 : // No State Change
                  break;
         default : printf("ERROR: Unknown State in state machine!!");
                   break;
       }
+      // Do not execute this section if State == RESET | NO STATE
+      if (State < 6){
+        int res;
+        timer_T1_ID = wdCreate();
 
-      int res;
-      timer_T1_ID = wdCreate();
+        if (timer_T1_ID == NULL){
+          printf("Cannot create timer! Terminating this task...");
+          exit(0);
+        }
+        // Timer is started at a timer dependent upon the buffer.
+        res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, 0);
 
-      if (timer_T1_ID == NULL){
-        printf("Cannot create timer! Terminating this task...");
-        exit(0);
+        if (res == ERROR){
+          printf("Cannot start the timer! Terminating...");
+          exit(0);
+        }
+
+        // Once timer is up, check GateState, and set the variable accordingly
+        // Also need to get a semaphore so global variable is not set simultaneously
+        // Reset flag
+        C0StartFlag == 0;
       }
-      // Timer is started at a timer dependent upon the buffer.
-      res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, 0);
-
-      if (res == ERROR){
-        printf("Cannot start the timer! Terminating...");
-        exit(0);
-      }
-
-      // Once timer is up, check GateState, and set the variable accordingly
-      // Also need to get a semaphore so global variable is not set simultaneously
     }
   }
 }
@@ -234,6 +239,7 @@ void AnalyseConveyor1(){
         case 5 : timeinseconds = /*TIME3*/; // LS
                  break;
         case 6 : BlockBuffer1[2] = {0}; // Reset
+                 C1StartFlag == 0;
                  break;
         case 7 : // No State change
                  break;
@@ -258,6 +264,8 @@ void AnalyseConveyor1(){
         }
         // Once timer is up, check GateState, and set the variable accordingly
         // Also need to get a semaphore so global variable is not set simultaneously
+        // Reset flag
+        C1StartFlag == 0;
       }
     }
   }
