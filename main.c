@@ -30,14 +30,18 @@ char ResetFlag;
 char GateState; // Check and Set GateState before execution (after timer)
 char C0StartFlag;
 char C1StartFlag;
-char T1Flag = 0; //  ARE THESE FLAGS NECCESSARY?
+char T1Flag = 0; // Flag indicates to clossing timer to be set
 WD_ID timer_T1_ID; // Opening timer for conveyor 0
 char T2Flag = 0;
 WD_ID timer_T2_ID; // Opening timer for conveyor 1
-char T3Flag = 0;
+char T3Flag = 0; // Needed?
 WD_ID timer_T3_ID; // Closing timer for conveyor 0
-char T4Flag = 0;
+char T4Flag = 0; // Needed?
 WD_ID timer_T4_ID; // Closing timer for conveyor 1
+MSG_Q_ID queue0ID;
+MSG_Q_ID queue1ID;
+SEM_ID AnalyseBlocksSemID;
+SEM_ID MotorStateSemID;
 
 // Need WatchDog timers depending on state
 // Close gate watchdog x3 times, this can follow the sensor timer and depend upon buffer
@@ -45,17 +49,27 @@ WD_ID timer_T4_ID; // Closing timer for conveyor 1
 void TimerT1Callback(void){
   T1Flag = 1;
   // Carry out gatestate check code here for open gate
+  // Wait for semaphore
+  semTake(MotorStateSemID, WAIT_FOREVER);
+  // Check gate state
+  // Alter gate state
+  // Send message to MotorController
 }
 void TimerT2Callback(void){
   T2Flag = 1;
   // Carry out gatestate check code here for open gate
+  // Wait for semaphore
+  semTake(MotorStateSemID, WAIT_FOREVER);
+  // Check gate state
+  // Alter gate state
+  // Send message to MotorController
 }
 void TimerT3Callback(void){
-  T3Flag = 1;
+  T3Flag = 1; // ?
   // Carry out gatestate check code here for close gate
 }
 void TimerT4Callback(void){
-  T4Flag = 1;
+  T4Flag = 1; // ?
   // Carry out gatestate check code here for close gate
 }
 
@@ -80,8 +94,8 @@ char identical(char a[], char b[]) {
 }
 
 // This is a function that the conveyors will need to SHARE
-void AnalyseBlocks(void){
-  char Logic[5]; {S, L, SS, LL, SL, LS};
+void AnalyseBlocks(char BlockBuffer[]){
+  char Logic[5] = {S, L, SS, LL, SL, LS};
 
   // If array contains correct message code, send message of what the MotorController
   // needs to do and when
@@ -95,7 +109,7 @@ void AnalyseBlocks(void){
       State = identical(Logic[i], BlockBuffer);
       if (State == 1){
         // Pass message to Gates
-        return Logic[i]; // If i == 6 then Reset flag NEED TO IMPLEMENT
+        return i; // If i == 6 then Reset flag NEED TO IMPLEMENT
         break;
       }
     }
@@ -112,11 +126,16 @@ void BufferFunction(char BlockBuffer[], char BlockSize){
     return BlockBuffer;
 }
 
-void AnalyseConveyor0(char BlockSize0){
+void AnalyseConveyor0(){
   char BlockBuffer0[2] = {0};
-  char State[3] = {0};
+  char State;
   while(1){
     // Wait for message
+    res = msgQRecieve(queue0ID, &BlockSize0, 1, WAIT_FOREVER);
+    if (res == ERROR){
+      printf("Error reading sensor 0 message queue! Terminating...");
+      exit(0);
+    }
     // If a sensor detects 1 for the first time, set the start flag
     if (BlockSize0 == 1 && C0StartFlag == 0){
       C0StartFlag = 1;
@@ -124,6 +143,8 @@ void AnalyseConveyor0(char BlockSize0){
     // Check Flag and that the next state isn't a duplicate
     if (C0StartFlag == 1 && BlockSize0 != BlockBuffer0[0]){
       // Get Semaphore
+      semTake(AnalyseBlocksSemID, WAIT_FOREVER);
+
       BlockBuffer0 = BufferFunction(BlockBuffer0, BlockSize0)
       State = AnalyseBlocks(BlockBuffer0);
       // Set timer depending upon buffer
@@ -170,11 +191,16 @@ void AnalyseConveyor0(char BlockSize0){
   }
 }
 
-void AnalyseConveyor1(char BlockSize1){
+void AnalyseConveyor1(){
   char BlockBuffer1[2] = {0};
-  char State[3] = {0};
+  char State;
   while(1){
     // Wait for message
+    res = msgQRecieve(queue1ID, &BlockSize1, 1, WAIT_FOREVER);
+    if (res == ERROR){
+      printf("Error reading sensor 1 message queue! Terminating...");
+      exit(0);
+    }
     // If a sensor detects 1 for the first time, set the start flag
     if (BlockSize1 == 1 && C1StartFlag == 0){
       C1StartFlag = 1;
@@ -184,6 +210,7 @@ void AnalyseConveyor1(char BlockSize1){
     if (C1StartFlag == 1 && BlockSize1 != BlockBuffer1[0]){
       BlockBuffer1 = BufferFunction(BlockBuffer1, BlockSize1)
       // Get Semaphore
+      semTake(AnalyseBlocksSemID, WAIT_FOREVER);
       State = AnalyseBlocks(BlockBuffer1);
 
       // Set timer depending upon buffer
@@ -236,8 +263,19 @@ void CheckSensor(){
   // Reset sensor before use
     char BlockSize0 = readSizeSensors(0);
     // Send to analysis via message
+    res = msgQSend(queue0ID, &BlockSize0, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
+    if (res == ERROR){
+      printf("Cannot send sensor 0 input into queue! Terminating...");
+      exit(0);
+    }
+
     char BlockSize1 = readSizeSensors(1);
     // Send to analysis via message
+    res = msgQSend(queue1ID, &BlockSize1, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
+    if (res == ERROR){
+      printf("Cannot send sensor 1 input into queue! Terminating...");
+      exit(0);
+    }
   }
 }
 
@@ -263,11 +301,29 @@ void Main(void){
   int MotorController_id;
   int AnalyseConveyor0_id;
   int AnalyseConveyor1_id;
-// Check sensors and Count operation
-// readSizeSensors returns 0, 1, 2, 3 for no object, sensor 1, sensor 2, and
-// sensor 1 & 2, respectively.
-// The conveyor parameter distinguishes which conveyor is being checked.
-// Input is either 0 or 1.
+  // Set up message queues
+  queue0ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
+  if (queue0ID == NULL){
+    printf("Cannot create message queue! Terminating...");
+    exit(0);
+  }
+  queue1ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
+  if (queue1ID == NULL){
+    printf("Cannot create message queue! Terminating...");
+    exit(0);
+  }
+  // Set up semaphores
+  AnalyseBlocksSemID = semBCreate(SEM_Q_FIFO, SEM_EMPTY);
+  if (AnalyseBlocksSemID == NULL){
+    printf("Cannot create analysis semaphore! Terminating...");
+    exit(0);
+  }
+  MotorStateSemID = semBCreate(SEM_Q_FIFO, SEM_EMPTY);
+  if (MotorStateSemID == NULL){
+    printf("Cannot create analysis semaphore! Terminating...");
+    exit(0);
+  }
+  // Set up tasks
   CheckSensor_id = taskSpawn("CheckSensor", 100, 0, 20000,
                       (FUNCPTR)CheckSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
@@ -298,3 +354,6 @@ void Main(void){
 // large then small == 2, 3, 0 -- Send UPDOWN
 // small then large == 0, 3, 1 -- Send DOWNUP
 // end 'bit' == 2, 0
+
+// readSizeSensors returns 0, 1, 2, 3 for no object, sensor 1, sensor 2, and
+// sensor 1 & 2, respectively.
