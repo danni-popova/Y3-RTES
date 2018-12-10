@@ -19,12 +19,12 @@
 #include <ioLib.h>
 #include "time.h"
 
-char S[2] = {1, 0, 2}; // Count small, Influence gates // State 0
-char L[2] = {1, 3, 2}; // Count large, do not influence gates // State 1
-char SS[2] = {0, 3, 0}; // Count small, Influence gates // State 2
-char LL[2] = {2, 3, 1}; // Do not count, do not influence gates, Do we need this? // State 3
-char SL[2] = {0, 3, 1}; // Count small, influence gates // State 4
-char LS[2] = {2, 3, 0}; // Count small, influence gates // State 5
+char S[2] = {1, 0, 2}; // State 0
+char L[2] = {1, 3, 2}; // State 1
+char SS[2] = {0, 3, 0}; // State 2
+char LL[2] = {2, 3, 1}; // State 3
+char SL[2] = {0, 3, 1}; // State 4
+char LS[2] = {2, 3, 0}; // State 5
 char ResetState[2] = {0, 0, 0}; // State 6
 char ResetFlag;
 char GateState; // Check and Set GateState before execution (after timer)
@@ -42,6 +42,28 @@ MSG_Q_ID queueMotorID
 SEM_ID AnalyseBlocksSemID;
 SEM_ID MotorStateSemID;
 SEM_ID CountSemID;
+
+///////////////////////////// User Input ////////////////////////////
+
+void Interface(void){
+  // Shutdown
+  // Restart
+  // Poll for a keyboard input and respond accordingly
+  // Check count sensor
+  // Return Large/Small block count
+}
+
+/////////////////////////// Motor Response //////////////////////////
+
+void MotorController(char GateState){
+// Gates need to stay open for a certain amount of time so this should be
+// amended accordingly
+  setGates(char GateState);
+  // Set timer to read the count sensor at correct time
+  // Check GateState before closing gate again
+}
+
+//////////////////////////// Timers /////////////////////////
 
 void TimerT1Callback(void){ // Conveyor 0 close gate timer
   // Wait for semaphore
@@ -72,18 +94,9 @@ void TimerT4Callback(void){ // Conveyor 1 open gate timer - check sensor here?
   semGive(MotorStateSemID);
 }
 
-// // Possible addition is user settings to change mode.
-// void Settings(void){
-//   // Initial settings that can be altered by the user
-// }
+///////////////////////// Block Analysis ////////////////////////////
 
-void Interface(void){
-  // Shutdown
-  // Restart
-  // Poll for a keyboard input and respond accordingly
-}
-
-// Check whether the state has changed
+// Checks whether the state has changed
 char identical(char a[], char b[]) {
     for (char i = 0 ; i < 3 ; ++i) {
         if (a[i] != b[i])
@@ -334,6 +347,8 @@ void AnalyseConveyor1(){
   }
 }
 
+///////////////////////////// Sensor Input ///////////////////////////
+
 void CheckSensor(){
   while(1){
   // Reset sensor before use
@@ -352,21 +367,7 @@ void CheckSensor(){
   }
 }
 
-void MotorController(char GateState){
-// Gates need to stay open for a certain amount of time so this should be
-// amended accordingly
-  setGates(char GateState);
-  // Set timer to read the count sensor at correct time
-  // Check GateState before closing gate again
-}
-
-void Interface(void){
-  // Shutdown
-  // Restart
-  // Poll for a keyboard input and respond accordingly
-  // Check count sensor
-  // Return Large/Small block count
-}
+///////////////////////////// Setup ////////////////////////
 
 void Main(void){
   startMotor();
