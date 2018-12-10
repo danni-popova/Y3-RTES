@@ -59,13 +59,13 @@ void TimerT2Callback(void){ // Conveyor 1 close gate timer
   semGive(MotorStateSemID);
   // Send message to MotorController
 }
-void TimerT3Callback(void){ // Conveyor 0 open gate timer
+void TimerT3Callback(void){ // Conveyor 0 open gate timer - check sensor here?
   semTake(MotorStateSemID, WAIT_FOREVER);
   // Check gate state
   // Alter gate state
   semGive(MotorStateSemID);
 }
-void TimerT4Callback(void){ // Conveyor 1 open gate timer
+void TimerT4Callback(void){ // Conveyor 1 open gate timer - check sensor here?
   semTake(MotorStateSemID, WAIT_FOREVER);
   // Check gate state
   // Alter gate state
@@ -343,7 +343,6 @@ void CheckSensor(){
       printf("Cannot send sensor 0 input into queue! Terminating...");
       exit(0);
     }
-
     char BlockSize1 = readSizeSensors(1);
     res = msgQSend(queueC1ID, &BlockSize1, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
     if (res == ERROR){
@@ -361,12 +360,12 @@ void MotorController(char GateState){
   // Check GateState before closing gate again
 }
 
-void Feedback(){
-  // Read count sensor and store info for Interface to read
-  // User interface that returns number of large blocks detected,
-  // snall blocks detected and large blocks collected.
-  // Includes error catching and shutdown option.
-  // Shutdown option may need to be an interrupt to override operations.
+void Interface(void){
+  // Shutdown
+  // Restart
+  // Poll for a keyboard input and respond accordingly
+  // Check count sensor
+  // Return Large/Small block count
 }
 
 void Main(void){
