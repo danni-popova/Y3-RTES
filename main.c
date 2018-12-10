@@ -34,8 +34,9 @@ WD_ID timer_T1_ID; // Opening timer for conveyor 0
 WD_ID timer_T2_ID; // Opening timer for conveyor 1
 WD_ID timer_T3_ID; // Closing timer for conveyor 0
 WD_ID timer_T4_ID; // Closing timer for conveyor 1
-MSG_Q_ID queue0ID;
-MSG_Q_ID queue1ID;
+MSG_Q_ID queueC0ID;
+MSG_Q_ID queueC1ID;
+MSG_Q_ID queueMotorID
 SEM_ID AnalyseBlocksSemID;
 SEM_ID MotorStateSemID;
 
@@ -128,7 +129,7 @@ void AnalyseConveyor0(){
     exit(0);
   }
   while(1){
-    res = msgQRecieve(queue0ID, &BlockSize0, 1, WAIT_FOREVER);
+    res = msgQRecieve(queueC0ID, &BlockSize0, 1, WAIT_FOREVER);
     if (res == ERROR){
       printf("Error reading sensor 0 message queue! Terminating...");
       exit(0);
@@ -218,7 +219,7 @@ void AnalyseConveyor1(){
   }
   while(1){
     // Wait for message
-    res = msgQRecieve(queue1ID, &BlockSize1, 1, WAIT_FOREVER);
+    res = msgQRecieve(queueC1ID, &BlockSize1, 1, WAIT_FOREVER);
     if (res == ERROR){
       printf("Error reading sensor 1 message queue! Terminating...");
       exit(0);
@@ -304,14 +305,14 @@ void CheckSensor(){
   while(1){
   // Reset sensor before use
     char BlockSize0 = readSizeSensors(0);
-    res = msgQSend(queue0ID, &BlockSize0, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
+    res = msgQSend(queueC0ID, &BlockSize0, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
     if (res == ERROR){
       printf("Cannot send sensor 0 input into queue! Terminating...");
       exit(0);
     }
 
     char BlockSize1 = readSizeSensors(1);
-    res = msgQSend(queue1ID, &BlockSize1, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
+    res = msgQSend(queueC1ID, &BlockSize1, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
     if (res == ERROR){
       printf("Cannot send sensor 1 input into queue! Terminating...");
       exit(0);
@@ -342,13 +343,18 @@ void Main(void){
   int AnalyseConveyor0_id;
   int AnalyseConveyor1_id;
   // Set up message queues
-  queue0ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
-  if (queue0ID == NULL){
+  queueC0ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
+  if (queueC0ID == NULL){
     printf("Cannot create message queue! Terminating...");
     exit(0);
   }
-  queue1ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
-  if (queue1ID == NULL){
+  queueC1ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
+  if (queueC1ID == NULL){
+    printf("Cannot create message queue! Terminating...");
+    exit(0);
+  }
+  queueMotorID = msgQCreate(100, 1, MSG_Q_PRIORITY);
+  if (queueMotorID == NULL){
     printf("Cannot create message queue! Terminating...");
     exit(0);
   }
