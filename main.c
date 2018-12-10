@@ -19,17 +19,19 @@
 #include <ioLib.h>
 #include "time.h"
 
-char S[2] = {1, 0, 2}; // Do not count, Influence gates // State 0
-char L[2] = {1, 3, 2}; // Only count, do not influence gates // State 1
-char SS[2] = {0, 3, 0}; // Do not count, Influence gates // State 2
+char S[2] = {1, 0, 2}; // Count small, Influence gates // State 0
+char L[2] = {1, 3, 2}; // Count large, do not influence gates // State 1
+char SS[2] = {0, 3, 0}; // Count small, Influence gates // State 2
 char LL[2] = {2, 3, 1}; // Do not count, do not influence gates, Do we need this? // State 3
-char SL[2] = {0, 3, 1}; // Count AND influence gates // State 4
-char LS[2] = {2, 3, 0}; // Count AND influence gates // State 5
+char SL[2] = {0, 3, 1}; // Count small, influence gates // State 4
+char LS[2] = {2, 3, 0}; // Count small, influence gates // State 5
 char ResetState[2] = {0, 0, 0}; // State 6
 char ResetFlag;
 char GateState; // Check and Set GateState before execution (after timer)
 char C0StartFlag;
 char C1StartFlag;
+char SmallCount;
+char LargeCount;
 WD_ID timer_T1_ID; // Opening timer for conveyor 0
 WD_ID timer_T2_ID; // Opening timer for conveyor 1
 WD_ID timer_T3_ID; // Closing timer for conveyor 0
@@ -39,13 +41,14 @@ MSG_Q_ID queueC1ID;
 MSG_Q_ID queueMotorID
 SEM_ID AnalyseBlocksSemID;
 SEM_ID MotorStateSemID;
+SEM_ID CountSemID;
 
 void TimerT1Callback(void){ // Conveyor 0 close gate timer
   // Wait for semaphore
   semTake(MotorStateSemID, WAIT_FOREVER);
   // Check gate state
   // Alter gate state
-  semGive(MotorStateSemID)
+  semGive(MotorStateSemID);
   // Send message to MotorController
 }
 void TimerT2Callback(void){ // Conveyor 1 close gate timer
@@ -53,20 +56,20 @@ void TimerT2Callback(void){ // Conveyor 1 close gate timer
   semTake(MotorStateSemID, WAIT_FOREVER);
   // Check gate state
   // Alter gate state
-  semGive(MotorStateSemID)
+  semGive(MotorStateSemID);
   // Send message to MotorController
 }
 void TimerT3Callback(void){ // Conveyor 0 open gate timer
   semTake(MotorStateSemID, WAIT_FOREVER);
   // Check gate state
   // Alter gate state
-  semGive(MotorStateSemID)
+  semGive(MotorStateSemID);
 }
 void TimerT4Callback(void){ // Conveyor 1 open gate timer
   semTake(MotorStateSemID, WAIT_FOREVER);
   // Check gate state
   // Alter gate state
-  semGive(MotorStateSemID)
+  semGive(MotorStateSemID);
 }
 
 // // Possible addition is user settings to change mode.
@@ -155,6 +158,9 @@ void AnalyseConveyor0(){
                      printf("Cannot start the timer! Terminating...");
                      exit(0);
                    }
+                   semTake(CountSemID, WAIT_FOREVER);
+                   SmallCount = SmallCount + 1;
+                   semGive(CountSemID, WAIT_FOREVER);
                    C0StartFlag == 0;
                    break;
           case 1 : timeinseconds = /*TIME1*/; // L
@@ -163,6 +169,9 @@ void AnalyseConveyor0(){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
+                    semTake(CountSemID, WAIT_FOREVER);
+                    LargeCount = LargeCount + 1;
+                    semGive(CountSemID, WAIT_FOREVER);
                     C0StartFlag == 0;
                    break;
           case 2 : timeinseconds = /*TIME2*/; // SS
@@ -171,6 +180,9 @@ void AnalyseConveyor0(){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
+                    semTake(CountSemID, WAIT_FOREVER);
+                    SmallCount = SmallCount + 2;
+                    semGive(CountSemID, WAIT_FOREVER);
                     C0StartFlag == 0;
                    break;
           case 3 : timeinseconds = /*TIME3*/; // LL
@@ -187,6 +199,9 @@ void AnalyseConveyor0(){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
+                    semTake(CountSemID, WAIT_FOREVER);
+                    SmallCount = SmallCount + 1;
+                    semGive(CountSemID, WAIT_FOREVER);
                     C0StartFlag == 0;
                    break;
           case 5 : timeinseconds = /*TIME3*/; // LS
@@ -195,6 +210,9 @@ void AnalyseConveyor0(){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
+                    semTake(CountSemID, WAIT_FOREVER);
+                    SmallCount = SmallCount + 1;
+                    semGive(CountSemID, WAIT_FOREVER);
                     C0StartFlag == 0;
                    break;
           case 6 : BlockBuffer0[2] = {0}; // Reset
@@ -246,6 +264,9 @@ void AnalyseConveyor1(){
                      printf("Cannot start the timer! Terminating...");
                      exit(0);
                    }
+                   semTake(CountSemID, WAIT_FOREVER);
+                   SmallCount = SmallCount + 1;
+                   semGive(CountSemID, WAIT_FOREVER);
                    C1StartFlag == 0;
                    break;
           case 1 : timeinseconds = /*TIME1*/; // L
@@ -254,6 +275,9 @@ void AnalyseConveyor1(){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
+                    semTake(CountSemID, WAIT_FOREVER);
+                    LargeCount = LargeCount + 1;
+                    semGive(CountSemID, WAIT_FOREVER);
                     C1StartFlag == 0;
                    break;
           case 2 : timeinseconds = /*TIME2*/; // SS
@@ -262,6 +286,9 @@ void AnalyseConveyor1(){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
+                    semTake(CountSemID, WAIT_FOREVER);
+                    SmallCount = SmallCount + 2;
+                    semGive(CountSemID, WAIT_FOREVER);
                     C1StartFlag == 0;
                    break;
           case 3 : timeinseconds = /*TIME3*/; // LL
@@ -278,6 +305,9 @@ void AnalyseConveyor1(){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
+                    semTake(CountSemID, WAIT_FOREVER);
+                    SmallCount = SmallCount + 1;
+                    semGive(CountSemID, WAIT_FOREVER);
                     C1StartFlag == 0;
                    break;
           case 5 : timeinseconds = /*TIME3*/; // LS
@@ -286,6 +316,9 @@ void AnalyseConveyor1(){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
+                    semTake(CountSemID, WAIT_FOREVER);
+                    SmallCount = SmallCount + 1;
+                    semGive(CountSemID, WAIT_FOREVER);
                     C1StartFlag == 0;
                    break;
           case 6 : BlockBuffer1[2] = {0}; // Reset
@@ -366,6 +399,11 @@ void Main(void){
   }
   MotorStateSemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
   if (MotorStateSemID == NULL){
+    printf("Cannot create analysis semaphore! Terminating...");
+    exit(0);
+  }
+  CountSemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
+  if (CountSemID == NULL){
     printf("Cannot create analysis semaphore! Terminating...");
     exit(0);
   }
