@@ -39,9 +39,6 @@ MSG_Q_ID queue1ID;
 SEM_ID AnalyseBlocksSemID;
 SEM_ID MotorStateSemID;
 
-// Need WatchDog timers depending on state
-// Close gate watchdog x3 times, this can follow the sensor timer and depend upon buffer
-// Open gate watchdog time, then reset the GateState
 void TimerT1Callback(void){ // Conveyor 0 close gate timer
   // Wait for semaphore
   semTake(MotorStateSemID, WAIT_FOREVER);
@@ -91,13 +88,10 @@ char identical(char a[], char b[]) {
     return 1;
 }
 
-// This is a function that the conveyors will need to SHARE
 void AnalyseBlocks(char BlockBuffer[]){
   char Logic[5] = {S, L, SS, LL, SL, LS};
-
   // If array contains correct message code, send message of what the MotorController
   // needs to do and when
-  // Send count msg to Interface
   while(1){
     State = 0;
     if (ResetFlag == 1){
@@ -134,7 +128,6 @@ void AnalyseConveyor0(){
     exit(0);
   }
   while(1){
-    // Wait for message
     res = msgQRecieve(queue0ID, &BlockSize0, 1, WAIT_FOREVER);
     if (res == ERROR){
       printf("Error reading sensor 0 message queue! Terminating...");
@@ -146,14 +139,13 @@ void AnalyseConveyor0(){
     }
     // Check Flag and that the next state isn't a duplicate
     if (C0StartFlag == 1 && BlockSize0 != BlockBuffer0[0]){
-      // Get Semaphore
       semTake(AnalyseBlocksSemID, WAIT_FOREVER);
       BlockBuffer0 = BufferFunction(BlockBuffer0, BlockSize0)
       State = AnalyseBlocks(BlockBuffer0);
-      // Free the semaphore
       semGive(AnalyseBlocksSemID);
-      // Set timer depending upon buffer
       int timeinseconds;
+
+      // Set timer depending upon buffer
       if (State < 7){
         switch(State){
           case 0 : timeinseconds = /*TIME1*/; // S
@@ -215,7 +207,6 @@ void AnalyseConveyor0(){
   }
 }
 
-
 void AnalyseConveyor1(){
   char BlockBuffer1[2] = {0};
   char State;
@@ -239,11 +230,9 @@ void AnalyseConveyor1(){
     // Run if StartFlag is set and the sensor reading is not the same
     // as the previous sensor reading
     if (C1StartFlag == 1 && BlockSize1 != BlockBuffer1[0]){
-      // Get Semaphore
       semTake(AnalyseBlocksSemID, WAIT_FOREVER);
       BlockBuffer1 = BufferFunction(BlockBuffer1, BlockSize1)
       State = AnalyseBlocks(BlockBuffer1);
-      // Free the semaphore
       semGive(AnalyseBlocksSemID);
 
       // Set timer depending upon buffer
@@ -315,7 +304,6 @@ void CheckSensor(){
   while(1){
   // Reset sensor before use
     char BlockSize0 = readSizeSensors(0);
-    // Send to analysis via message
     res = msgQSend(queue0ID, &BlockSize0, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
     if (res == ERROR){
       printf("Cannot send sensor 0 input into queue! Terminating...");
@@ -323,7 +311,6 @@ void CheckSensor(){
     }
 
     char BlockSize1 = readSizeSensors(1);
-    // Send to analysis via message
     res = msgQSend(queue1ID, &BlockSize1, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
     if (res == ERROR){
       printf("Cannot send sensor 1 input into queue! Terminating...");
