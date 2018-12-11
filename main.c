@@ -46,11 +46,13 @@ SEM_ID CountSemID;
 ///////////////////////////// User Input ////////////////////////////
 
 void Interface(void){
-  // Shutdown
-  // Restart
-  // Poll for a keyboard input and respond accordingly
-  // Check count sensor
-  // Return Large/Small block count
+  while(1){
+    // Shutdown - end tasks
+    // Restart
+    // Poll for a keyboard input and respond accordingly
+    // Check count sensor
+    // Return Large/Small block count
+  }
 }
 
 /////////////////////////// Motor Response //////////////////////////
@@ -375,6 +377,7 @@ void Main(void){
   int MotorController_id;
   int AnalyseConveyor0_id;
   int AnalyseConveyor1_id;
+  int Interface_id;
   // Set up message queues
   queueC0ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
   if (queueC0ID == NULL){
@@ -416,6 +419,8 @@ void Main(void){
 
   AnalyseConveyor1_id = taskSpawn("AnalyseConveyor1", 101, 0, 20000,
                       (FUNCPTR)AnalyseConveyor1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
+  Interface_id = taskSpawn("Interface", 101, 0, 20000,
+                      (FUNCPTR)Interface, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
   // Does this need to be a task?
   //MotorController_id = taskSpawn("MotorController", 99, 0, 20000,
   //                    (FUNCPTR)MotorController, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
