@@ -167,7 +167,7 @@ void AnalyseConveyor0(){
       // Set timer depending upon buffer
       if (State < 7){
         switch(State){
-          case 0 : timeinseconds = /*TIME1*/; // S
+          case 0 : timeinseconds = /*TIME1*/; // S / D U
                    res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, State);
                    if (res == ERROR){
                      printf("Cannot start the timer! Terminating...");
@@ -178,7 +178,7 @@ void AnalyseConveyor0(){
                    semGive(CountSemID, WAIT_FOREVER);
                    C0StartFlag == 0;
                    break;
-          case 1 : timeinseconds = /*TIME1*/; // L
+          case 1 : timeinseconds = /*TIME1*/; // L / U
                     res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
@@ -189,7 +189,7 @@ void AnalyseConveyor0(){
                     semGive(CountSemID, WAIT_FOREVER);
                     C0StartFlag == 0;
                    break;
-          case 2 : timeinseconds = /*TIME2*/; // SS
+          case 2 : timeinseconds = /*TIME2*/; // SS / D-D U
                     res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
@@ -200,7 +200,7 @@ void AnalyseConveyor0(){
                     semGive(CountSemID, WAIT_FOREVER);
                     C0StartFlag == 0;
                    break;
-          case 3 : timeinseconds = /*TIME3*/; // LL
+          case 3 : timeinseconds = /*TIME3*/; // LL / U-U
                     res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
@@ -208,7 +208,7 @@ void AnalyseConveyor0(){
                     }
                     C0StartFlag == 0;
                    break;
-          case 4 : timeinseconds = /*TIME2*/; // SL
+          case 4 : timeinseconds = /*TIME2*/; // SL / D U
                     res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
@@ -219,7 +219,7 @@ void AnalyseConveyor0(){
                     semGive(CountSemID, WAIT_FOREVER);
                     C0StartFlag == 0;
                    break;
-          case 5 : timeinseconds = /*TIME3*/; // LS
+          case 5 : timeinseconds = /*TIME3*/; // LS / U D U
                     res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
