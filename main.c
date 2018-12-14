@@ -71,9 +71,11 @@ void TimerT1Callback(void){ // Conveyor 0 close gate timer
   // Wait for semaphore
   semTake(MotorStateSemID, WAIT_FOREVER);
   // Check gate state
+  // Does state need up or down for gate?
   // Alter gate state
   semGive(MotorStateSemID);
-  // Send message to MotorController
+  // Send message to MotorController containing:
+  // What time delay UP timer should be
 }
 void TimerT2Callback(void){ // Conveyor 1 close gate timer
   // Wait for semaphore
