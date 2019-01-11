@@ -48,11 +48,20 @@ SEM_ID CountSemID;
 ///////////////////////////// User Input ////////////////////////////
 
 void Interface(void){
+  char msgCount;
+  char SensorCount = 0;
   while(1){
     // Shutdown - end tasks
     // Restart
     // Poll for a keyboard input and respond accordingly
+
     // Check count sensor
+    res = msgQRecieve(queueCount, &msgCount, 1, WAIT_FOREVER);
+    if (res == ERROR){
+      printf("Error reading sensor 0 message queue! Terminating...");
+      exit(0);
+    }
+    SensorCount = SensorCount + msgCount; // Total count from count sensor
     // Return Large/Small block count
   }
 }
@@ -144,6 +153,7 @@ void BufferFunction(char BlockBuffer[], char BlockSize){
 void AnalyseConveyor0(){
   char BlockBuffer0[2] = {0};
   char State;
+  char BlockSize0;
   int res;
   timer_T1_ID = wdCreate();
   if (timer_T1_ID == NULL){
@@ -248,6 +258,7 @@ void AnalyseConveyor0(){
 void AnalyseConveyor1(){
   char BlockBuffer1[2] = {0};
   char State;
+  char BlockSize1;
   int res;
   timer_T2_ID = wdCreate();
   if (timer_T2_ID == NULL){
