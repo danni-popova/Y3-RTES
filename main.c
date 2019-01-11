@@ -40,6 +40,7 @@ MSG_Q_ID queueSensorC0ID;
 MSG_Q_ID queueSensorC1ID;
 MSG_Q_ID queueMotorC0ID;
 MSG_Q_ID queueMotorC1ID;
+MSG_Q_ID queueCount;
 SEM_ID AnalyseBlocksSemID;
 SEM_ID MotorStateSemID;
 SEM_ID CountSemID;
@@ -357,17 +358,37 @@ void AnalyseConveyor1(){
 void CheckSensor(){
   while(1){
   // Reset sensor before use
+    resetSizeSensors(0);
     char BlockSize0 = readSizeSensors(0);
     res = msgQSend(queueSensorC0ID, &BlockSize0, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
     if (res == ERROR){
       printf("Cannot send sensor 0 input into queue! Terminating...");
       exit(0);
     }
+    resetSizeSensors(1);
     char BlockSize1 = readSizeSensors(1);
     res = msgQSend(queueSensorC1ID, &BlockSize1, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
     if (res == ERROR){
       printf("Cannot send sensor 1 input into queue! Terminating...");
       exit(0);
+    }
+    resetCountSensor(0);
+    char Count = readCountSensor(0);
+    if (Count == 1){
+      res = msgQSend(queueCount, &Count, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
+      if (res == ERROR){
+        printf("Cannot send sensor 1 input into queue! Terminating...");
+        exit(0);
+      }
+    }
+    resetCountSensor(1);
+    Count = readCountSensor(1);
+    if (Count == 1){
+      res = msgQSend(queueCount, &Count, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
+      if (res == ERROR){
+        printf("Cannot send sensor 1 input into queue! Terminating...");
+        exit(0);
+      }
     }
   }
 }
@@ -399,6 +420,11 @@ void Main(void){
   }
   queueMotorC1ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
   if (queueMotorC1ID == NULL){
+    printf("Cannot create message queue! Terminating...");
+    exit(0);
+  }
+  queueCount = msgQCreate(100, 1, MSG_Q_PRIORITY);
+  if (queueCount == NULL){
     printf("Cannot create message queue! Terminating...");
     exit(0);
   }
