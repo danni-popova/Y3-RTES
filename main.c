@@ -142,24 +142,15 @@ void MotorController1(void){
 
 void TimerT1Callback(State){ // Conveyor 0
   int res;
-  // Wait for semaphore
-  //semTake(MotorStateSemID, WAIT_FOREVER);
-  // Check gate state
-  //semGive(MotorStateSemID);
   // Send message to MotorController
   char res = msgQSend(queueMotorC0ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
   if (res == ERROR){
     printf("Cannot send sensor 1 input into queue! Terminating...");
     exit(0);
   }
-  // What time delay UP timer should be
 }
 void TimerT2Callback(State){ // Conveyor 0
   int res;
-  // Wait for semaphore
-  //semTake(MotorStateSemID, WAIT_FOREVER);
-  // Check gate state
-  //semGive(MotorStateSemID);
   // Send message to MotorController
   char res = msgQSend(queueMotorC0ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
   if (res == ERROR){
@@ -169,10 +160,6 @@ void TimerT2Callback(State){ // Conveyor 0
 }
 void TimerT3Callback(State){ // Conveyor 0
   int res;
-  // Wait for semaphore
-  //semTake(MotorStateSemID, WAIT_FOREVER);
-  // Check gate state
-  //semGive(MotorStateSemID);
   // Send message to MotorController
   char res = msgQSend(queueMotorC0ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
   if (res == ERROR){
@@ -182,10 +169,6 @@ void TimerT3Callback(State){ // Conveyor 0
 }
 void TimerT4Callback(State){ // Conveyor 1
   int res;
-  // Wait for semaphore
-  //semTake(MotorStateSemID, WAIT_FOREVER);
-  // Check gate state
-  //semGive(MotorStateSemID);
   // Send message to MotorController
   char res = msgQSend(queueMotorC1ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
   if (res == ERROR){
@@ -195,10 +178,6 @@ void TimerT4Callback(State){ // Conveyor 1
 }
 void TimerT5Callback(State){ // Conveyor 1
   int res;
-  // Wait for semaphore
-  //semTake(MotorStateSemID, WAIT_FOREVER);
-  // Check gate state
-  //semGive(MotorStateSemID);
   // Send message to MotorController
   char res = msgQSend(queueMotorC1ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
   if (res == ERROR){
@@ -208,10 +187,6 @@ void TimerT5Callback(State){ // Conveyor 1
 }
 void TimerT6Callback(State){ // Conveyor 1
   int res;
-  // Wait for semaphore
-  //semTake(MotorStateSemID, WAIT_FOREVER);
-  // Check gate state
-  //semGive(MotorStateSemID);
   // Send message to MotorController
   char res = msgQSend(queueMotorC1ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
   if (res == ERROR){
