@@ -80,7 +80,6 @@ void MotorController0(void){
     // Check current gat state
     semTake(MotorStateSemID, WAIT_FOREVER);
     char CheckGateState = GateState;
-    semGive(MotorStateSemID);
     char NextState;
     if (State == 1){ // Down
       switch CheckGateState{
@@ -101,6 +100,7 @@ void MotorController0(void){
       }
     }
   setGates(char NextState);
+  semGive(MotorStateSemID);
   }
 }
 void MotorController1(void){
@@ -115,7 +115,6 @@ void MotorController1(void){
     // Check current gat state
     semTake(MotorStateSemID, WAIT_FOREVER);
     char CheckGateState = GateState;
-    semGive(MotorStateSemID);
     char NextState;
     if (State == 1){ // Down
       switch CheckGateState{
@@ -135,6 +134,7 @@ void MotorController1(void){
         default : NextState = 0;
     }
     setGates(char NextState);
+    semGive(MotorStateSemID);
   }
 }
 
