@@ -644,11 +644,11 @@ void Main(void){
   Interface_id = taskSpawn("Interface", 101, 0, 20000,
                       (FUNCPTR)Interface, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
-  MotorController_id = taskSpawn("MotorController", 101, 0, 20000,
+  MotorController_id = taskSpawn("MotorController0", 101, 0, 20000,
                       (FUNCPTR)MotorController, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
-  // Does this need to be a task?
-  //MotorController_id = taskSpawn("MotorController", 99, 0, 20000,
-  //                    (FUNCPTR)MotorController, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
+
+  MotorController_id = taskSpawn("MotorController1", 101, 0, 20000,
+                      (FUNCPTR)MotorController, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
   while(1){
     // Loops forever and let the tasks/functions sort themselves out.
