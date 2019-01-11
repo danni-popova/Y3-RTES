@@ -68,57 +68,156 @@ void Interface(void){
 
 /////////////////////////// Motor Response //////////////////////////
 
-void MotorController(char GateState){
-// Gates need to stay open for a certain amount of time so this should be
-// amended accordingly
-  setGates(char GateState);
-  // Set timer to read the count sensor at correct time
-  // Check GateState before closing gate again
+void MotorController0(void){
+  int res;
+  while(1){
+    // Wait for message from timer conveyor 0
+    res = msgQRecieve(queueMotorC0ID, &State, 1, WAIT_FOREVER);
+    if (res == ERROR){
+      printf("Error reading sensor 0 message queue! Terminating...");
+      exit(0);
+    }
+    // Check current gat state
+    semTake(MotorStateSemID, WAIT_FOREVER);
+    char CheckGateState = GateState;
+    semGive(MotorStateSemID);
+    char NextState;
+    if (State == 1){ // Down
+      switch CheckGateState{
+        case 0 : NextState = 1;
+        case 1 : NextState = 1;
+        case 2 : NextState = 3;
+        case 3 : NextState = 3;
+        default : NextState = 0;
+      }
+    }
+    else if (State == 0){ // Up
+      switch CheckGateState{
+        case 0 : NextState = 0;
+        case 1 : NextState = 0;
+        case 2 : NextState = 2;
+        case 3 : NextState = 2;
+        default : NextState = 0;
+      }
+    }
+  setGates(char NextState);
+  }
+}
+void MotorController1(void){
+  int res;
+  while(1){
+    // Wait for message from timer conveyor 1
+    res = msgQRecieve(queueMotorC1ID, &State, 1, WAIT_FOREVER);
+    if (res == ERROR){
+      printf("Error reading sensor 0 message queue! Terminating...");
+      exit(0);
+    }
+    // Check current gat state
+    semTake(MotorStateSemID, WAIT_FOREVER);
+    char CheckGateState = GateState;
+    semGive(MotorStateSemID);
+    char NextState;
+    if (State == 1){ // Down
+      switch CheckGateState{
+        case 0 : NextState = 2;
+        case 1 : NextState = 3;
+        case 2 : NextState = 2;
+        case 3 : NextState = 3;
+        default : NextState = 0;
+      }
+    }
+    else if (State == 0){ // Up
+      switch CheckGateState{
+        case 0 : NextState = 0;
+        case 1 : NextState = 1;
+        case 2 : NextState = 0;
+        case 3 : NextState = 1;
+        default : NextState = 0;
+    }
+    setGates(char NextState);
+  }
 }
 
 //////////////////////////// Timers /////////////////////////
 
-void TimerT1Callback(void){ // Conveyor 0
+void TimerT1Callback(State){ // Conveyor 0
+  int res;
   // Wait for semaphore
-  semTake(MotorStateSemID, WAIT_FOREVER);
+  //semTake(MotorStateSemID, WAIT_FOREVER);
   // Check gate state
-  // Does state need up or down for gate?
-  // Alter gate state
-  semGive(MotorStateSemID);
-  // Send message to MotorController containing:
+  //semGive(MotorStateSemID);
+  // Send message to MotorController
+  char res = msgQSend(queueMotorC0ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
+  if (res == ERROR){
+    printf("Cannot send sensor 1 input into queue! Terminating...");
+    exit(0);
+  }
   // What time delay UP timer should be
 }
-void TimerT2Callback(void){ // Conveyor 0
+void TimerT2Callback(State){ // Conveyor 0
+  int res;
   // Wait for semaphore
-  semTake(MotorStateSemID, WAIT_FOREVER);
+  //semTake(MotorStateSemID, WAIT_FOREVER);
   // Check gate state
-  // Alter gate state
-  semGive(MotorStateSemID);
+  //semGive(MotorStateSemID);
   // Send message to MotorController
+  char res = msgQSend(queueMotorC0ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
+  if (res == ERROR){
+    printf("Cannot send sensor 1 input into queue! Terminating...");
+    exit(0);
+  }
 }
-void TimerT3Callback(void){ // Conveyor 0
-  semTake(MotorStateSemID, WAIT_FOREVER);
+void TimerT3Callback(State){ // Conveyor 0
+  int res;
+  // Wait for semaphore
+  //semTake(MotorStateSemID, WAIT_FOREVER);
   // Check gate state
-  // Alter gate state
-  semGive(MotorStateSemID);
+  //semGive(MotorStateSemID);
+  // Send message to MotorController
+  char res = msgQSend(queueMotorC0ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
+  if (res == ERROR){
+    printf("Cannot send sensor 1 input into queue! Terminating...");
+    exit(0);
+  }
 }
-void TimerT4Callback(void){ // Conveyor 1
-  semTake(MotorStateSemID, WAIT_FOREVER);
+void TimerT4Callback(State){ // Conveyor 1
+  int res;
+  // Wait for semaphore
+  //semTake(MotorStateSemID, WAIT_FOREVER);
   // Check gate state
-  // Alter gate state
-  semGive(MotorStateSemID);
+  //semGive(MotorStateSemID);
+  // Send message to MotorController
+  char res = msgQSend(queueMotorC1ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
+  if (res == ERROR){
+    printf("Cannot send sensor 1 input into queue! Terminating...");
+    exit(0);
+  }
 }
-void TimerT5Callback(void){ // Conveyor 1
-  semTake(MotorStateSemID, WAIT_FOREVER);
+void TimerT5Callback(State){ // Conveyor 1
+  int res;
+  // Wait for semaphore
+  //semTake(MotorStateSemID, WAIT_FOREVER);
   // Check gate state
-  // Alter gate state
-  semGive(MotorStateSemID);
+  //semGive(MotorStateSemID);
+  // Send message to MotorController
+  char res = msgQSend(queueMotorC1ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
+  if (res == ERROR){
+    printf("Cannot send sensor 1 input into queue! Terminating...");
+    exit(0);
+  }
 }
-void TimerT6Callback(void){ // Conveyor 1
-  semTake(MotorStateSemID, WAIT_FOREVER);
+void TimerT6Callback(State){ // Conveyor 1
+  int res;
+  // Wait for semaphore
+  //semTake(MotorStateSemID, WAIT_FOREVER);
   // Check gate state
-  // Alter gate state
-  semGive(MotorStateSemID);
+  //semGive(MotorStateSemID);
+  // Send message to MotorController
+  char res = msgQSend(queueMotorC1ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
+  if (res == ERROR){
+    printf("Cannot send sensor 1 input into queue! Terminating...");
+    exit(0);
+  }
 }
 
 ///////////////////////// Block Analysis ////////////////////////////
@@ -167,11 +266,8 @@ void AnalyseConveyor0(){
   char State;
   char BlockSize0;
   int res;
-  timer_T1_ID = wdCreate();
-  if (timer_T1_ID == NULL){
-    printf("Cannot create timer! Terminating this task...");
-    exit(0);
-  }
+  int Down = 1;
+  int Up = 0;
   while(1){
     res = msgQRecieve(queueSensorC0ID, &BlockSize0, 1, WAIT_FOREVER);
     if (res == ERROR){
@@ -194,12 +290,12 @@ void AnalyseConveyor0(){
       if (State < 7){
         switch(State){
           case 0 : timeinseconds = /*TIME1*/; // S / D U
-                   res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, State);
+                   res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, Down);
                    if (res == ERROR){
                      printf("Cannot start the timer! Terminating...");
                      exit(0);
                    }
-                   res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
+                   res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, Up);
                    if (res == ERROR){
                      printf("Cannot start the timer! Terminating...");
                      exit(0);
@@ -210,7 +306,7 @@ void AnalyseConveyor0(){
                    C0StartFlag == 0;
                    break;
           case 1 : timeinseconds = /*TIME1*/; // L / U
-                    res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, State);
+                    res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, Up);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
@@ -221,17 +317,17 @@ void AnalyseConveyor0(){
                     C0StartFlag == 0;
                    break;
           case 2 : timeinseconds = /*TIME2*/; // SS / D-D U
-                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, State);
+                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, Down);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
-                    res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
+                    res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, Down);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
-                    res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, State);
+                    res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, Up);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
@@ -242,12 +338,12 @@ void AnalyseConveyor0(){
                     C0StartFlag == 0;
                    break;
           case 3 : timeinseconds = /*TIME3*/; // LL / U-U
-                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, State);
+                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, Up);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
-                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
+                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, Up);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
@@ -255,12 +351,12 @@ void AnalyseConveyor0(){
                     C0StartFlag == 0;
                    break;
           case 4 : timeinseconds = /*TIME2*/; // SL / D U
-                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, State);
+                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, Down);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
-                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
+                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, Up);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
@@ -271,17 +367,17 @@ void AnalyseConveyor0(){
                     C0StartFlag == 0;
                    break;
           case 5 : timeinseconds = /*TIME3*/; // LS / U D U
-                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, State);
+                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, Up);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
-                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, State);
+                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, Down);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
-                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, State);
+                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, Up);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
@@ -307,11 +403,8 @@ void AnalyseConveyor1(){
   char State;
   char BlockSize1;
   int res;
-  timer_T2_ID = wdCreate();
-  if (timer_T2_ID == NULL){
-    printf("Cannot create timer! Terminating this task...");
-    exit(0);
-  }
+  int Down = 1;
+  int Up = 0;
   while(1){
     // Wait for message
     res = msgQRecieve(queueSensorC1ID, &BlockSize1, 1, WAIT_FOREVER);
@@ -336,12 +429,12 @@ void AnalyseConveyor1(){
       if (State < 7){ // or 6
         switch(State){
           case 0 : timeinseconds = /*TIME1*/; // S / D U
-                   res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, State);
+                   res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, Down);
                    if (res == ERROR){
                      printf("Cannot start the timer! Terminating...");
                      exit(0);
                    }
-                   res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, State);
+                   res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, Up);
                    if (res == ERROR){
                      printf("Cannot start the timer! Terminating...");
                      exit(0);
@@ -352,7 +445,7 @@ void AnalyseConveyor1(){
                    C1StartFlag == 0;
                    break;
           case 1 : timeinseconds = /*TIME1*/; // L / U
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, State);
+                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, Up);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
@@ -363,17 +456,17 @@ void AnalyseConveyor1(){
                     C1StartFlag == 0;
                    break;
           case 2 : timeinseconds = /*TIME2*/;  // SS / D-D U
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, State);
+                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, Down);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, State);
+                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, Down);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT6Callback, State);
+                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT6Callback, Up);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
@@ -384,12 +477,12 @@ void AnalyseConveyor1(){
                     C1StartFlag == 0;
                    break;
           case 3 : timeinseconds = /*TIME3*/; // LL / U-U
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, State);
+                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, Up);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, State);
+                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, Up);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
@@ -397,12 +490,12 @@ void AnalyseConveyor1(){
                     C1StartFlag == 0;
                    break;
           case 4 : timeinseconds = /*TIME2*/; // SL / D U
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, State);
+                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, Down);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, State);
+                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, Up);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
@@ -413,17 +506,17 @@ void AnalyseConveyor1(){
                     C1StartFlag == 0;
                    break;
           case 5 : timeinseconds = /*TIME3*/; // LS / U D U
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, State);
+                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, Up);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, State);
+                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, Down);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
                     }
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT6Callback, State);
+                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT6Callback, Up);
                     if (res == ERROR){
                       printf("Cannot start the timer! Terminating...");
                       exit(0);
@@ -449,6 +542,7 @@ void AnalyseConveyor1(){
 ///////////////////////////// Sensor Input ///////////////////////////
 
 void CheckSensor(){
+  int res;
   while(1){
   // Reset sensor before use
     resetSizeSensors(0);
@@ -546,8 +640,12 @@ void Main(void){
 
   AnalyseConveyor1_id = taskSpawn("AnalyseConveyor1", 101, 0, 20000,
                       (FUNCPTR)AnalyseConveyor1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
+
   Interface_id = taskSpawn("Interface", 101, 0, 20000,
                       (FUNCPTR)Interface, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
+
+  MotorController_id = taskSpawn("MotorController", 101, 0, 20000,
+                      (FUNCPTR)MotorController, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
   // Does this need to be a task?
   //MotorController_id = taskSpawn("MotorController", 99, 0, 20000,
   //                    (FUNCPTR)MotorController, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
