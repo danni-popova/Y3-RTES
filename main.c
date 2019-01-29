@@ -19,6 +19,9 @@
 #include <ioLib.h>
 #include "time.h"
 
+#define UP 1
+#define DOWN 0
+
 char S[2] = {1, 0, 2}; // State 0 Small
 char L[2] = {1, 3, 2}; // State 1 Large
 char SS[2] = {0, 3, 0}; // State 2 Small-Small
@@ -246,189 +249,50 @@ void TimerT6Callback(State){ // Conveyor 1
 
 ///////////////////////// Block Analysis ////////////////////////////
 
-// Checks whether the state has changed
-char identical(char a[], char b[]) {
-    for (char i = 0 ; i < 3 ; ++i) {
-        if (a[i] != b[i])
-            return 0;
-    }
-    return 1;
-}
-
-void AnalyseBlocks(char BlockBuffer[]){
-  char Logic[5] = {S, L, SS, LL, SL, LS};
-  // If array contains correct message code, send message of what the MotorController
-  // needs to do and when
-  while(1){
-    State = 0;
-    if (ResetFlag == 1){
-      return 6; // If i == 6 then Reset flag
-    }
-    for (char i = 0; i < 5; i++){
-      State = identical(Logic[i], BlockBuffer);
-      if (State == 1){
-        // Pass message to Gates
-        return i; // If i == 6 then Reset flag NEED TO IMPLEMENT
-        break;
-      }
-    }
-    return 7;
-  }
-}
-
-// Shifts states in the buffer along
-void BufferFunction(char BlockBuffer[], char BlockSize){
-    for (char i = 1; i < 3; i--) {
-      BlockBuffer[i] = BlockBuffer[i-1]
-    }
-    BlockBuffer[0] = BlockSize;
-    return BlockBuffer;
-}
-
 void AnalyseConveyor0(){
-  char BlockBuffer0[2] = {0};
-  char State;
+  char Flag = 0;
   char BlockSize0;
   int res;
-  int Down = 1;
-  int Up = 0;
   while(1){
-    res = msgQRecieve(queueSensorC0ID, &BlockSize0, 1, WAIT_FOREVER);
+    // Wait for message
+    res = msgQRecieve(queueSensorC1ID, &BlockSize0, 1, WAIT_FOREVER);
     if (res == ERROR){
-      printf("Error reading sensor 0 message queue! Terminating...");
+      printf("Error reading sensor 1 message queue! Terminating...");
       exit(0);
     }
-    // If a sensor detects 1 for the first time, set the start flag
-    if (BlockSize0 == 1 && C0StartFlag == 0){
-      C0StartFlag = 1;
-    }
-    // Check Flag and that the next state isn't a duplicate
-    if (C0StartFlag == 1 && BlockSize0 != BlockBuffer0[0]){
-      semTake(AnalyseBlocksSemID, WAIT_FOREVER);
-      BlockBuffer0 = BufferFunction(BlockBuffer0, BlockSize0)
-      State = AnalyseBlocks(BlockBuffer0);
-      semGive(AnalyseBlocksSemID);
-      int timeinseconds;
-
-      // Set timer depending upon buffer
-      if (State < 7){
-        switch(State){
-          case 0 : timeinseconds = /*TIME1*/; // S / D U
-                   res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, Down);
-                   if (res == ERROR){
-                     printf("Cannot start the timer! Terminating...");
-                     exit(0);
+    switch(BlockSize0){
+      case 0 : // Small block
+               // Check Flag
+               // Clear Flag
+               if (Flag == 1){
+                 // Set timer and pass UP
+                 res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, UP);
+                 if (res == ERROR){
+                   printf("Cannot start the timer! Terminating...");
+                   exit(0);
                    }
-                   res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, Up);
-                   if (res == ERROR){
-                     printf("Cannot start the timer! Terminating...");
-                     exit(0);
-                   }
-                   semTake(CountSemID, WAIT_FOREVER);
-                   SmallCount = SmallCount + 1;
-                   semGive(CountSemID, WAIT_FOREVER);
-                   C0StartFlag == 0;
-                   break;
-          case 1 : timeinseconds = /*TIME1*/; // L / U
-                    res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, Up);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    semTake(CountSemID, WAIT_FOREVER);
-                    LargeCount = LargeCount + 1;
-                    semGive(CountSemID, WAIT_FOREVER);
-                    C0StartFlag == 0;
-                   break;
-          case 2 : timeinseconds = /*TIME2*/; // SS / D-D U
-                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, Down);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, Down);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, Up);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    semTake(CountSemID, WAIT_FOREVER);
-                    SmallCount = SmallCount + 2;
-                    semGive(CountSemID, WAIT_FOREVER);
-                    C0StartFlag == 0;
-                   break;
-          case 3 : timeinseconds = /*TIME3*/; // LL / U-U
-                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, Up);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, Up);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    C0StartFlag == 0;
-                   break;
-          case 4 : timeinseconds = /*TIME2*/; // SL / D U
-                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, Down);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, Up);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    semTake(CountSemID, WAIT_FOREVER);
-                    SmallCount = SmallCount + 1;
-                    semGive(CountSemID, WAIT_FOREVER);
-                    C0StartFlag == 0;
-                   break;
-          case 5 : timeinseconds = /*TIME3*/; // LS / U D U
-                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT1Callback, Up);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, Down);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    res = wdStart(time_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, Up);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    semTake(CountSemID, WAIT_FOREVER);
-                    SmallCount = SmallCount + 1;
-                    semGive(CountSemID, WAIT_FOREVER);
-                    C0StartFlag == 0;
-                   break;
-          case 6 : BlockBuffer0[2] = {0}; // Reset
-                   C0StartFlag == 0;
-                   break;
-          default : printf("ERROR: Unknown State in state machine!!");
-                    break;
-        }
-      }
+               }
+               Flag = 0;
+               break;
+      case 1 : // Set flag
+               Flag = 1;
+               break;
+      case 2 : // ??
+      case 3 : // Large block, add to large block counter for counter check
+               // Check flag, if not set, then not large block
+               // Set gates DONW?
+               // Clear Flag?
+               break;
+      default : // ??
+               break;
     }
   }
 }
 
 void AnalyseConveyor1(){
-  char BlockBuffer1[2] = {0};
-  char State;
+  char Flag = 0;
   char BlockSize1;
   int res;
-  int Down = 1;
-  int Up = 0;
   while(1){
     // Wait for message
     res = msgQRecieve(queueSensorC1ID, &BlockSize1, 1, WAIT_FOREVER);
@@ -436,129 +300,31 @@ void AnalyseConveyor1(){
       printf("Error reading sensor 1 message queue! Terminating...");
       exit(0);
     }
-    // If a sensor detects 1 for the first time, set the start flag
-    if (BlockSize1 == 1 && C1StartFlag == 0){
-      C1StartFlag = 1;
-    }
-    // Run if StartFlag is set and the sensor reading is not the same
-    // as the previous sensor reading
-    if (C1StartFlag == 1 && BlockSize1 != BlockBuffer1[0]){
-      semTake(AnalyseBlocksSemID, WAIT_FOREVER);
-      BlockBuffer1 = BufferFunction(BlockBuffer1, BlockSize1)
-      State = AnalyseBlocks(BlockBuffer1);
-      semGive(AnalyseBlocksSemID);
-
-      // Set timer depending upon buffer
-      int timeinseconds;
-      if (State < 7){ // or 6
-        switch(State){
-          case 0 : timeinseconds = /*TIME1*/; // S / D U
-                   res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, Down);
-                   if (res == ERROR){
-                     printf("Cannot start the timer! Terminating...");
-                     exit(0);
+    switch(BlockSize1){
+      case 0 : // Small block
+               // Check Flag
+               // Clear Flag
+               if (Flag == 1){
+                 // Set timer and pass UP
+                 res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, UP);
+                 if (res == ERROR){
+                   printf("Cannot start the timer! Terminating...");
+                   exit(0);
                    }
-                   res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, Up);
-                   if (res == ERROR){
-                     printf("Cannot start the timer! Terminating...");
-                     exit(0);
-                   }
-                   semTake(CountSemID, WAIT_FOREVER);
-                   SmallCount = SmallCount + 1;
-                   semGive(CountSemID, WAIT_FOREVER);
-                   C1StartFlag == 0;
-                   break;
-          case 1 : timeinseconds = /*TIME1*/; // L / U
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, Up);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    semTake(CountSemID, WAIT_FOREVER);
-                    LargeCount = LargeCount + 1;
-                    semGive(CountSemID, WAIT_FOREVER);
-                    C1StartFlag == 0;
-                   break;
-          case 2 : timeinseconds = /*TIME2*/;  // SS / D-D U
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, Down);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, Down);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT6Callback, Up);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    semTake(CountSemID, WAIT_FOREVER);
-                    SmallCount = SmallCount + 2;
-                    semGive(CountSemID, WAIT_FOREVER);
-                    C1StartFlag == 0;
-                   break;
-          case 3 : timeinseconds = /*TIME3*/; // LL / U-U
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, Up);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, Up);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    C1StartFlag == 0;
-                   break;
-          case 4 : timeinseconds = /*TIME2*/; // SL / D U
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, Down);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, Up);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    semTake(CountSemID, WAIT_FOREVER);
-                    SmallCount = SmallCount + 1;
-                    semGive(CountSemID, WAIT_FOREVER);
-                    C1StartFlag == 0;
-                   break;
-          case 5 : timeinseconds = /*TIME3*/; // LS / U D U
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT4Callback, Up);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT5Callback, Down);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    res = wdStart(timer_T2_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT6Callback, Up);
-                    if (res == ERROR){
-                      printf("Cannot start the timer! Terminating...");
-                      exit(0);
-                    }
-                    semTake(CountSemID, WAIT_FOREVER);
-                    SmallCount = SmallCount + 1;
-                    semGive(CountSemID, WAIT_FOREVER);
-                    C1StartFlag == 0;
-                   break;
-          case 6 : BlockBuffer1[2] = {0}; // Reset
-                   C1StartFlag == 0;
-                   break;
-          case 7 : // No State change
-                   break;
-          default : printf("ERROR: Unknown State in state machine!!");
-                    break;
-        }
-      }
+               }
+               Flag = 0;
+               break;
+      case 1 : // Set flag
+               Flag = 1;
+               break;
+      case 2 : // ??
+      case 3 : // Large block, add to large block counter for counter check
+               // Check flag, if not set, then not large block
+               // Set gates DONW?
+               // Clear Flag?
+               break;
+      default : // ??
+               break;
     }
   }
 }
@@ -686,18 +452,6 @@ void Main(void){
   }
 }
 
-// N.B.
-// small (1) == 1, 0 -- Use for counting (?) -- Send DOWN to MotorController with Default timing
-// small (2) == 3, 0 -- Use for counting (?) -- Send DOWN with Default timing
-// large == 1, 3 -- Use for counting (?) -- Send UP with Default timing
-// 1 small == 1, 0, 2 -- Count?
-// 1 large == 1, 1, 3 OR 1, 3, 2 -- Count?
-// 2 small == 0, 3, 0 -- Send DOWN with Long timing (?)
-// 2 large == 2, 3, 1 --  Send UP with Long timing (?)
-// large then small == 2, 3, 0 -- Send UPDOWN
-// small then large == 0, 3, 1 -- Send DOWNUP
-// end 'bit' == 2, 0
-
 // readSizeSensors returns 0, 1, 2, 3 for no object, sensor 1, sensor 2, and
 // sensor 1 & 2, respectively.
 
@@ -707,3 +461,7 @@ void Main(void){
 // Shutdown Code
 // Interface
 // Check timing on ocunt sensor function
+// CHANGE ALL BLOCK LOGIC TO BE SIMPLER
+// Add previous Check
+// If encounter 0 then small block - set gates
+// Don't count large blocks?
