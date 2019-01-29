@@ -139,7 +139,7 @@ void MotorController0(void){
     }
   setGates(char NextState);
   semGive(MotorStateSemID);
-  // Check timing on calling this function/Include a delay
+  // Check timing on calling this function/Include a delay/only on UP gate (i.e. large block)
   CheckEndSensor0();
   }
 }
@@ -185,7 +185,7 @@ void MotorController1(void){
     }
     setGates(char NextState);
     semGive(MotorStateSemID);
-    // Check timing on calling this function/Include a delay
+    // Check timing on calling this function/Include a delay/only on UP gate (i.e. large block)
     CheckEndSensor0();
   }
 }
@@ -280,7 +280,7 @@ void AnalyseConveyor0(){
       case 2 : // ??
       case 3 : // Large block, add to large block counter for counter check
                // Check flag, if not set, then not large block
-               // Set gates DONW?
+               // Set gates DONW? Check counter sensor?
                // Clear Flag?
                break;
       default : // ??
@@ -320,7 +320,7 @@ void AnalyseConveyor1(){
       case 2 : // ??
       case 3 : // Large block, add to large block counter for counter check
                // Check flag, if not set, then not large block
-               // Set gates DONW?
+               // Set gates DONW? Check count sensor?
                // Clear Flag?
                break;
       default : // ??
@@ -460,7 +460,7 @@ void Main(void){
 // timers need times!
 // Shutdown Code
 // Interface
-// Check timing on ocunt sensor function
+// Check timing on count sensor function - only on large block?
 // CHANGE ALL BLOCK LOGIC TO BE SIMPLER
 // Add previous Check
 // If encounter 0 then small block - set gates
