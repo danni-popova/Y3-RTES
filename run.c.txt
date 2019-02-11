@@ -1,0 +1,299 @@
+#include "vxWorks.h"
+#include "taskLib.h"
+#include "stdlib.h"
+#include "stdio.h"
+#include "cinterface.h"
+#include "wdLib.h"
+#include "time.h"
+
+/* Counter for all blocks detected by size sensor 1 */
+int blocksDetected = 0;
+
+/* Counter for small blocks */
+int smallBlocksDetected = 0;
+
+/* Counter for big blocks */
+int bigBlocksDetected = 0;
+
+
+
+/* ID for semaphore that controls sensor reads */
+SEM_ID sensor_read_sem_id;
+
+/* ID for watchdog timer to reschedule sensor reads task */
+WDOG_ID sensor_read_timer_ID;
+
+/* ID of periodic task to read sensors */
+int sensor_read_task_id;
+
+/* ID of periodic task to print state */
+int status_print_task_id;
+
+
+
+/* ID for semaphore that controls sensor reads */
+SEM_ID gate_control_sem_id;
+
+/* ID for watchdog timer to reschedule sensor reads task */
+WDOG_ID gate_control_timer_ID;
+
+/* ID of periodic task to read sensors */
+int gate_control_task_id;
+
+/* ID of periodic task to print state */
+int gate_control_task_id;
+
+
+
+/* Flag to read when execution has to be stopped */
+int stopExecutionFlag = 0; 
+
+/* Flags to open/close gates */
+char gatesFlag[2] = {0 ,0}; 
+
+
+/* Periodic task to control gates when flags are raised */
+void controlGates(void)
+{
+	while(1)
+		{	
+			/* Wait until next reading */
+			semTake(gate_control_sem_id, WAIT_FOREVER);
+			
+			/* Read gate flag and set gates */
+			if(gatesFlag[0] == 1 && gatesFlag[1] == 1)
+			{
+				/* Close both gates */
+				setGates(3);
+			}
+			else if (gatesFlag[0] == 1 && gatesFlag[1] == 0)
+			{
+				/* Close gate 0, open gate 1 */
+				setGates(2);
+			}
+			else if(gatesFlag[0] == 0 && gatesFlag[1] == 1)
+			{
+				/* Open gate 0, close gate 1 */
+				setGates(1);
+			}
+			else 
+			{
+				/* Open both gates */
+				setGates(0);
+			}
+		}
+}
+
+/* Set gate flag by specifying gate (0 for left, 1 for right) and flag (0 for open, 1 for close)*/
+void setGateFlag(int gate, char flag)
+{
+	gatesFlag[gate] = flag; 
+}
+
+/* Create timer to set gate flag to given value   */
+void createSetGateFlagTimer(int gate, char flag)
+{
+	/* Create watchdog timer for sensor read task scheduler */
+	WDOG_ID close_gate_timer_ID = wdCreate();
+
+	/* Set delay value depending on closing or opening gate */
+	int delay; 
+	
+	if(flag == 1)
+	{
+		/* Gate to close in 3 seconds */
+		delay = 3 * sysClkRateGet();
+	}
+	else
+	{
+		delay = 1 * sysClkRateGet();
+	}
+	
+	/* Start timer for sensor read scheduling - current timing 1 sec*/
+	wdStart(close_gate_timer_ID, delay, (FUNCPTR)setGateFlag, 0);
+}
+
+void sensorReadTimerCallback(void) /* No printf statements due to interrupt */
+{
+	/* After set time, give semaphore to trigger sensor reading */
+	semGive(sensor_read_sem_id);
+	
+	if(stopExecutionFlag == 0)
+	{
+		wdStart(sensor_read_timer_ID, 0.5 * sysClkRateGet(), (FUNCPTR)sensorReadTimerCallback, 0);
+	}
+}
+
+void gateControlTimerCallback()
+{
+	/* After time has expired, give semaphore to start gate control */
+	semGive(gate_control_sem_id);
+	
+	/* If stop command isn't issued, restart task */
+	if(stopExecutionFlag == 0)
+	{
+		wdStart(sensor_read_timer_ID, 1 * sysClkRateGet(), (FUNCPTR)gateControlTimerCallback, 0);
+	}
+}
+
+/* In case there's a new state of the sensors, raise needed flags for the belt specified */
+void processSensorReading(char newReading,  /* New value read from sensors */
+						  char oldReading,	/* Previous value read from sensors  */
+						  char belt) 		/* Belt - 0 for left, 1 for right */
+{	
+	printf("\nProcessing readings of sensor %c", belt);
+	
+	switch(newReading)
+	{
+		case 0 : 
+			
+			/* Check if small block is now inbetween sensors */
+			if(oldReading == 1)
+			{
+				smallBlocksDetected++;
+				printf("Small block detected");
+			}
+			
+			printf("No blocks in front of size sensors\n");
+			break;
+			
+		case 1:
+			
+			printf("New block detected.");
+			blocksDetected++;
+			break;
+			
+		case 2:
+			printf("Block in front of second size sensor\n");
+			break;
+			
+		case 3:
+			printf("Block(s) in front of both size sensors\n");
+			break;
+	}
+}
+
+void readSingleSensor(char sensor, char oldReading)
+{
+	char newReading;
+	
+	/* Reset sensor to be able to read from it */
+	resetSizeSensors(sensor);
+	
+	/* Read the specified sensor */
+	newReading = readSizeSensors(sensor);
+	
+	if(newReading != oldReading)
+	{
+		printf("\nNew state of left sensors.");
+		processSensorReading(newReading, oldReading, sensor);
+	}
+}
+
+/* Read sensors task scheduled to run every 5 seconds */
+void readSensors(void)
+{
+	char leftSensorOldReading = 0;
+	char rightSensorOldReading = 0;
+	
+	while(1)
+	{	
+		/* Wait until next reading */
+		semTake(sensor_read_sem_id, WAIT_FOREVER);
+		
+		/* Read and process left sensor reading */
+		readSingleSensor(0, leftSensorOldReading);
+		
+		/* Read and process right sensor reading */
+		readSingleSensor(1, rightSensorOldReading);
+	}
+}
+
+void statusPrint(void)
+{
+	while(stopExecutionFlag == 0)
+	{
+		bigBlocksDetected = blocksDetected - smallBlocksDetected;
+		
+		printf("\nTotal blocks detected: %d", blocksDetected);
+		printf("\nSmall blocks detected: %d", smallBlocksDetected);
+		printf("\nBig blocks detected: %d", bigBlocksDetected);	
+		
+		taskDelay(10 * sysClkRateGet());
+	}
+	
+	printf("Stop execution flag changed.");
+}
+
+void setupSensorReading(void)
+{
+	/* Create empty binary semaphore for sensor read task scheduler */
+	sensor_read_sem_id = semBCreate(SEM_Q_FIFO, SEM_EMPTY);
+	
+	/* Create watchdog timer for sensor read task scheduler */
+	sensor_read_timer_ID = wdCreate();
+
+	/* Start timer for sensor read scheduling - current timing 1 sec*/
+	wdStart(sensor_read_timer_ID, 0.5 * sysClkRateGet(), (FUNCPTR)sensorReadTimerCallback, 0);
+
+	/* Create sensor reading task to wait until scheduled time is up*/
+	sensor_read_task_id = taskSpawn("SensorRead", 99, 0, 20000, (FUNCPTR)readSensors, 0,0,0,0,0,0,0,0,0,0);
+}
+
+void setupGateControl(void)
+{
+	/* Create empty binary semaphore for gate control scheduling*/
+	gate_control_sem_id = semBCreate(SEM_Q_FIFO, SEM_EMPTY);
+
+	/* Create watchdog timer for gate control scheduling*/
+	gate_control_timer_ID = wdCreate();
+	
+	/*Start timer for gate control*/
+	wdStart(gate_control_timer_ID, 1 * sysClkRateGet(),  (FUNCPTR)gateControlTimerCallback, 0);
+	
+	gate_control_task_id = taskSpawn("GateControl", 100, 0, 20000, (FUNCPTR)controlGates, 0,0,0,0,0,0,0,0,0,0);
+}
+
+void setupStatusOutput()
+{
+	/* Create a task to output state */
+	status_print_task_id = taskSpawn("Status Print", 98, 0, 20000, (FUNCPTR)statusPrint, 0,0,0,0,0,0,0,0,0,0);
+}
+
+void endExecution(void)
+{
+	/* Raise stop execution flag */
+	stopExecutionFlag = 1; 
+	
+	/* Delete task that outputs status */
+	taskDelete(status_print_task_id); 
+		
+	/* Wait for tasks to register change */
+	taskDelay(10 * sysClkRateGet());
+		
+	/* Stop the motor */
+	stopMotor();
+}
+
+int main(void) 
+{		
+	/* Send a start motor command at the beginnign of program run */
+	startMotor();
+	
+	/* Create watchdog timer, semaphore and task for sensor reading */
+	setupSensorReading();
+	
+	/* Create a task for status output */
+	setupStatusOutput();
+	
+	/* Create a semaphore for gate control scheduling */
+	setupGateControl();
+	
+	/* Run for 60 seconds */
+	taskDelay(60 * sysClkRateGet());
+	
+	/* End execution after a minute */
+	endExecution();
+	
+	return 0;
+}
