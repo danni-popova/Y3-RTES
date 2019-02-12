@@ -198,7 +198,7 @@ void MotorController1(void){
         case 3 : NextState = 3;
                  break;
         default : NextState = 0;
-                  break;
+                 break;
       }
       //openGateTimer1(2);
     }
@@ -213,7 +213,7 @@ void MotorController1(void){
         case 3 : NextState = 1;
                  break;
         default : NextState = 0;
-                  break;
+                 break;
     }
     setGates(char NextState);
     GateState = NextState;
