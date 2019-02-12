@@ -247,6 +247,48 @@ void TimerT6Callback(State){ // Conveyor 1
   }
 }
 
+void closeGateTimer0(void){
+	printf("Creating close gate timer");
+
+	int res;
+  res = wdStart(timer_T1_ID, 2*sysClkRateGet(), (FUNCPTR)TimerT1Callback, DOWN);
+  if (res == ERROR){
+    printf("Cannot start the timer! Terminating...");
+    exit(0);
+    }
+}
+
+void closeGateTimer1(void){
+	printf("Creating close gate timer");
+
+	int res;
+  res = wdStart(timer_T1_ID, 2*sysClkRateGet(), (FUNCPTR)TimerT2Callback, DOWN);
+  if (res == ERROR){
+    printf("Cannot start the timer! Terminating...");
+    exit(0);
+    }
+}
+void openGateTimer0(void){
+	printf("Creating close gate timer");
+
+	int res;
+  res = wdStart(timer_T1_ID, 2*sysClkRateGet(), (FUNCPTR)TimerT3Callback, DOWN);
+  if (res == ERROR){
+    printf("Cannot start the timer! Terminating...");
+    exit(0);
+    }
+}
+
+void openGateTimer1(void){
+	printf("Creating close gate timer");
+
+	int res;
+  res = wdStart(timer_T1_ID, 2*sysClkRateGet(), (FUNCPTR)TimerT4Callback, DOWN);
+  if (res == ERROR){
+    printf("Cannot start the timer! Terminating...");
+    exit(0);
+    }
+}
 ///////////////////////// Block Analysis ////////////////////////////
 
 void AnalyseConveyor0(){
@@ -306,22 +348,24 @@ void AnalyseConveyor1(){
                // Clear Flag
                if (Flag == 1){
                  // Set timer and pass UP
-                 res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, UP);
-                 if (res == ERROR){
-                   printf("Cannot start the timer! Terminating...");
-                   exit(0);
-                   }
+                 openGateTimer1(2);
+                 closeGateTimer1(4);
+               }
+               else if (Flag == 2){
+                 // Delay DOWN timer by resetting/overwriting
+                 closeGateTimer1(4);
                }
                Flag = 0;
                break;
       case 1 : // Set flag
                Flag = 1;
                break;
-      case 2 : // ??
+      case 2 : Flag = 0;
+               break;
       case 3 : // Large block, add to large block counter for counter check
                // Check flag, if not set, then not large block
                // Set gates DONW? Check count sensor?
-               // Clear Flag?
+               Flag = 2;
                break;
       default : // ??
                break;
