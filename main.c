@@ -37,12 +37,8 @@ WD_ID timer_T1_ID; // Opening timer for conveyor 0
 WD_ID timer_T2_ID; // Opening timer for conveyor 1
 WD_ID timer_T3_ID; // Closing timer for conveyor 0
 WD_ID timer_T4_ID; // Closing timer for conveyor 1
-MSG_Q_ID queueSensorC0ID;
-MSG_Q_ID queueSensorC1ID;
 MSG_Q_ID queueMotorC0ID;
 MSG_Q_ID queueMotorC1ID;
-MSG_Q_ID queueCount;
-SEM_ID AnalyseBlocksSemID;
 SEM_ID MotorStateSemID;
 SEM_ID CountSemID;
 SEM_ID EndCountSemID;
@@ -305,7 +301,7 @@ if (Conveyor == 0){
                  }
                  else{
                    clock_gettime(CLOCK_REALTIME, &time);
-                   
+
                    semTake(CountSemID, WAIT_FOREVER);
                    SmallCount0 ++;
                    semGive(CountSemID, WAIT_FOREVER);
@@ -407,7 +403,7 @@ void CheckEndSensor0(void){
 }
 void CheckEndSensor1(void){
   resetCountSensor(1);
-  Count = readCountSensor(1);
+  char Count = readCountSensor(1);
   if (Count == 1){
     semTake(EndCountSemID, WAIT_FOREVER);
     LargeCountSensor1 ++;
@@ -423,16 +419,6 @@ void Main(void){
   int MotorController1_id;
   int Interface_id;
   // Set up message queues
-  queueSensorC0ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
-  if (queueSensorC0ID == NULL){
-    printf("Cannot create message queue! Terminating...");
-    exit(0);
-  }
-  queueSensorC1ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
-  if (queueSensorC1ID == NULL){
-    printf("Cannot create message queue! Terminating...");
-    exit(0);
-  }
   queueMotorC0ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
   if (queueMotorC0ID == NULL){
     printf("Cannot create message queue! Terminating...");
@@ -443,17 +429,7 @@ void Main(void){
     printf("Cannot create message queue! Terminating...");
     exit(0);
   }
-  queueCount = msgQCreate(100, 1, MSG_Q_PRIORITY);
-  if (queueCount == NULL){
-    printf("Cannot create message queue! Terminating...");
-    exit(0);
-  }
   // Set up semaphores
-  AnalyseBlocksSemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
-  if (AnalyseBlocksSemID == NULL){
-    printf("Cannot create analysis semaphore! Terminating...");
-    exit(0);
-  }
   MotorStateSemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
   if (MotorStateSemID == NULL){
     printf("Cannot create analysis semaphore! Terminating...");
