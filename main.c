@@ -201,7 +201,7 @@ void TimerT1Callback(State){ // Conveyor 0
     exit(0);
   }
 }
-void TimerT2Callback(State){ // Conveyor 0
+void TimerT2Callback(State){ // Conveyor 1
   int res;
   // Send message to MotorController
   char res = msgQSend(queueMotorC0ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
@@ -220,24 +220,6 @@ void TimerT3Callback(State){ // Conveyor 0
   }
 }
 void TimerT4Callback(State){ // Conveyor 1
-  int res;
-  // Send message to MotorController
-  char res = msgQSend(queueMotorC1ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
-  if (res == ERROR){
-    printf("Cannot send sensor 1 input into queue! Terminating...");
-    exit(0);
-  }
-}
-void TimerT5Callback(State){ // Conveyor 1
-  int res;
-  // Send message to MotorController
-  char res = msgQSend(queueMotorC1ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
-  if (res == ERROR){
-    printf("Cannot send sensor 1 input into queue! Terminating...");
-    exit(0);
-  }
-}
-void TimerT6Callback(State){ // Conveyor 1
   int res;
   // Send message to MotorController
   char res = msgQSend(queueMotorC1ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
@@ -291,108 +273,70 @@ void openGateTimer1(void){
 }
 ///////////////////////// Block Analysis ////////////////////////////
 
-void AnalyseConveyor0(){
-  char Flag = 0;
-  char BlockSize0;
-  int res;
-  while(1){
-    // Wait for message
-    res = msgQRecieve(queueSensorC1ID, &BlockSize0, 1, WAIT_FOREVER);
-    if (res == ERROR){
-      printf("Error reading sensor 1 message queue! Terminating...");
-      exit(0);
-    }
-    switch(BlockSize0){
+void AnalyseConveyor(CurrentState, LastState, Conveyor){
+if (Conveyor == 0){
+    switch(CurrentState){
       case 0 : // Small block
-               // Check Flag
-               // Clear Flag
-               if (Flag == 1){
-                 // Set timer and pass UP
-                 res = wdStart(timer_T1_ID, timeinseconds*sysClkRateGet(), (FUNCPTR)TimerT2Callback, UP);
-                 if (res == ERROR){
-                   printf("Cannot start the timer! Terminating...");
-                   exit(0);
-                   }
+               if (LastState == 1){
+                 openGateTimer0(2);
+                 closeGateTimer0(4);
                }
-               Flag = 0;
+               else if (LastState == 3){
+                 // Delay DOWN timer by resetting/overwriting
+                 closeGateTimer0(4);
+               }
                break;
-      case 1 : // Set flag
-               Flag = 1;
-               break;
-      case 2 : // ??
-      case 3 : // Large block, add to large block counter for counter check
-               // Check flag, if not set, then not large block
-               // Set gates DONW? Check counter sensor?
-               // Clear Flag?
-               break;
-      default : // ??
+      case 3 : if (LastState != 0){
+                 // add count to large block
+               }
+      default :
                break;
     }
+}
+else if (Conveyor == 1){
+  switch(CurrentState){
+    case 0 : // Small block
+             if (LastState == 1){
+               openGateTimer1(2);
+               closeGateTimer1(4);
+             }
+             else if (LastState == 3){
+               // Delay DOWN timer by resetting/overwriting
+               closeGateTimer1(4);
+             }
+             break;
+    case 3 : if (LastState != 0){
+               // add count to large block
+             }
+    default :
+             break;
   }
 }
-
-void AnalyseConveyor1(){
-  char Flag = 0;
-  char BlockSize1;
-  int res;
-  while(1){
-    // Wait for message
-    res = msgQRecieve(queueSensorC1ID, &BlockSize1, 1, WAIT_FOREVER);
-    if (res == ERROR){
-      printf("Error reading sensor 1 message queue! Terminating...");
-      exit(0);
-    }
-    switch(BlockSize1){
-      case 0 : // Small block
-               // Check Flag
-               // Clear Flag
-               if (Flag == 1){
-                 // Set timer and pass UP
-                 openGateTimer1(2);
-                 closeGateTimer1(4);
-               }
-               else if (Flag == 2){
-                 // Delay DOWN timer by resetting/overwriting
-                 closeGateTimer1(4);
-               }
-               Flag = 0;
-               break;
-      case 1 : // Set flag
-               Flag = 1;
-               break;
-      case 2 : Flag = 0;
-               break;
-      case 3 : // Large block, add to large block counter for counter check
-               // Check flag, if not set, then not large block
-               // Set gates DONW? Check count sensor?
-               Flag = 2;
-               break;
-      default : // ??
-               break;
-    }
-  }
 }
 
 ///////////////////////////// Sensor Input ///////////////////////////
 
 void CheckSensor(){
   int res;
+  char CurrentState0;
+  char CurrentState1;
+  char LastState0;
+  char LastState1;
   while(1){
   // Reset sensor before use
     resetSizeSensors(0);
-    char BlockSize0 = readSizeSensors(0);
-    res = msgQSend(queueSensorC0ID, &BlockSize0, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
-    if (res == ERROR){
-      printf("Cannot send sensor 0 input into queue! Terminating...");
-      exit(0);
+    char CurrentState0 = readSizeSensors(0);
+    if (CurrentState0 != LastState0){
+      AnalyseConveyor(CurrentState0, LastState0, 0);
     }
+    LastState0 = CurrentState0;
+
     resetSizeSensors(1);
-    char BlockSize1 = readSizeSensors(1);
-    res = msgQSend(queueSensorC1ID, &BlockSize1, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
-    if (res == ERROR){
-      printf("Cannot send sensor 1 input into queue! Terminating...");
-      exit(0);
+    char CurrentState1 = readSizeSensors(1);
+    if (CurrentState1 != LastState1){
+      AnalyseConveyor(CurrentState1, LastState1, 1);
     }
+    LastState1 = CurrentState1;
   }
 }
 
