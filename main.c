@@ -97,6 +97,22 @@ void Interface(void){
 }
 /////////////////////////// Motor Response //////////////////////////
 
+// Shifts states in the buffer along
+void ShiftBuffer(char Conveyor){
+  semTake(BlockTimeSemID, WAIT_FOREVER);
+  if (Conveyor == 0){
+    for (char i = 1; i < 4; i--) {
+      BlockTimeQueue0[i] = BlockTimeQueue0[i-1]
+    }
+  }
+  else if (Conveyor == 1){
+    for (char i = 1; i < 4; i--) {
+      BlockTimeQueue1[i] = BlockTimeQueue1[i-1]
+    }
+  }
+  semGive(BlockTimeSemID, WAIT_FOREVER);
+}
+
 void MotorController0(void){
   int res;
   while(1){
@@ -140,6 +156,8 @@ void MotorController0(void){
     }
   setGates(char NextState);
   GateState = NextState;
+  //closeGateTimer0(2);
+  //ShiftBuffer(0);
   semGive(MotorStateSemID);
   // Check timing on calling this function/Include a delay/only on UP gate (i.e. large block)
   CheckEndSensor0();
@@ -187,6 +205,8 @@ void MotorController1(void){
     }
     setGates(char NextState);
     GateState = NextState;
+    //closeGateTimer1(2);
+    //ShiftBuffer(1);
     semGive(MotorStateSemID);
     // Check timing on calling this function/Include a delay/only on UP gate (i.e. large block)
     CheckEndSensor0();
@@ -284,7 +304,7 @@ if (Conveyor == 0){
                if (LastState == 1){
                  if (BlockTimePointer0 != 0){
                    openGateTimer0(2);
-                   closeGateTimer0(4);
+                   //closeGateTimer0(4);
 
                    semTake(CountSemID, WAIT_FOREVER);
                    SmallCount0 ++;
@@ -333,7 +353,7 @@ else if (Conveyor == 1){
              if (LastState == 1){
                if (BlockTimeQueue1 != 0){
                  openGateTimer1(2);
-                 closeGateTimer1(4);
+                 //closeGateTimer1(4);
 
                  semTake(CountSemID, WAIT_FOREVER);
                  SmallCount1 ++;
