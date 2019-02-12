@@ -27,8 +27,10 @@ char BlockTimeQueue0[4]; // Put system time elapsed in this array to reset WD ti
 char BlockTimeQueue1[4];
 
 char GateState; // Check and Set GateState before execution (after timer)
-char SmallCount;
-char LargeCount;
+char SmallCount0;
+char SmallCount1;
+char LargeCount0;
+char LargeCount1;
 char LargeCountSensor0;
 char LargeCountSensor1;
 WD_ID timer_T1_ID; // Opening timer for conveyor 0
@@ -57,32 +59,50 @@ void Interface(void){
     c = getchar();
     switch(c){
       case 'q': // Shutdown/Quit - Delete Tasks in correct order
-      case 'l': // Large block count
+      case 'l': // Large block count 0
                 semTake(CountSemID);
-                printf("Total Large blocks counted: %c \n", LargeCount);
+                printf("Total Large blocks counted: %c \n", LargeCount0);
                 semGive(CountSemID);
-      case 's': // Small block count
+                break;
+      case 's': // Small block count 0
                 semTake(CountSemID);
-                printf("Total Small blocks detected: %c \n", SmallCount);
+                printf("Total Small blocks detected: %c \n", SmallCount0);
                 semGive(CountSemID);
+                break;
+      case 'o': // Large block count 1
+                semTake(CountSemID);
+                printf("Total Large blocks counted: %c \n", LargeCount1);
+                semGive(CountSemID);
+                break;
+      case 'p': // Small block count 1
+                semTake(CountSemID);
+                printf("Total Small blocks detected: %c \n", SmallCount1);
+                semGive(CountSemID);
+                break;
       case 'k': // Reset count value for large blocks
-                semTake(CountSemID);
+                semTake(EndCountSemID);
                 printf("Reset Large block count value to 0 \n");
                 LargeCount = 0;
+                LargeCountSensor0 = 0;
+                LargeCountSensor1 = 0;
                 semGive(CountSemID);
+                break;
       case 'a': // Reset count value for small blocks
                 semTake(CountSemID);
                 printf("Reset Small block detected value to 0 \n");
                 SmallCount = 0;
                 semGive(CountSemID);
+                break;
       case 'z': // Large block count Conveyor 0
                 semTake(EndCountSemID);
                 printf("Large block count for conveyor 0: %c \n", LargeCountSensor0);
                 semGive(EndCountSemID);
+                break;
       case 'x': // Large block count Conveyor 1
                 semTake(EndCountSemID);
                 printf("Large block count for conveyor 1: %c \n", LargeCountSensor1);
                 semGive(EndCountSemID);
+                break;
       default: break;
     }
 
@@ -132,6 +152,7 @@ void MotorController0(void){
       }
     }
   setGates(char NextState);
+  GateState = NextState;
   semGive(MotorStateSemID);
   // Check timing on calling this function/Include a delay/only on UP gate (i.e. large block)
   CheckEndSensor0();
@@ -178,6 +199,7 @@ void MotorController1(void){
                   break;
     }
     setGates(char NextState);
+    GateState = NextState;
     semGive(MotorStateSemID);
     // Check timing on calling this function/Include a delay/only on UP gate (i.e. large block)
     CheckEndSensor0();
@@ -268,20 +290,50 @@ void openGateTimer1(void){
 ///////////////////////// Block Analysis ////////////////////////////
 
 void AnalyseConveyor(CurrentState, LastState, Conveyor){
+int res;
 if (Conveyor == 0){
     switch(CurrentState){
       case 0 : // Small block
                if (LastState == 1){
-                 openGateTimer0(2);
-                 closeGateTimer0(4);
-               }
+                 if (BlockTimeQueue0 != 0){
+                   openGateTimer0(2);
+                   closeGateTimer0(4);
+
+                   semTake(CountSemID, WAIT_FOREVER);
+                   SmallCount0 ++;
+                   semGive(CountSemID, WAIT_FOREVER);
+                 }
+                 else{
+                   clock_gettime(CLOCK_REALTIME, &time);
+                   // Send message to MotorController with current time of block
+                   char res = msgQSend(queueSensorC0ID, &time, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
+                   if (res == ERROR){
+                     printf("Cannot send sensor 1 input into queue! Terminating...");
+                     exit(0);
+                   }
+                   semTake(CountSemID, WAIT_FOREVER);
+                   SmallCount0 ++;
+                   semGive(CountSemID, WAIT_FOREVER);
+                 }
+               } // second small block
                else if (LastState == 3){
-                 // Delay DOWN timer by resetting/overwriting
-                 closeGateTimer0(4);
+                 clock_gettime(CLOCK_REALTIME, &time);
+                 // Send message to MotorController with current time of block
+                 char res = msgQSend(queueSensorC0ID, &time, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
+                 if (res == ERROR){
+                   printf("Cannot send sensor 1 input into queue! Terminating...");
+                   exit(0);
+                 }
+                 semTake(CountSemID, WAIT_FOREVER);
+                 SmallCount0 ++;
+                 semGive(CountSemID, WAIT_FOREVER);
                }
                break;
       case 3 : if (LastState != 0){
                  // add count to large block
+                 semTake(CountSemID, WAIT_FOREVER);
+                 LargeCount0 ++;
+                 semGive(CountSemID, WAIT_FOREVER);
                }
       default :
                break;
@@ -291,16 +343,46 @@ else if (Conveyor == 1){
   switch(CurrentState){
     case 0 : // Small block
              if (LastState == 1){
-               openGateTimer1(2);
-               closeGateTimer1(4);
-             }
+               if (BlockTimeQueue1 != 0){
+                 openGateTimer1(2);
+                 closeGateTimer1(4);
+
+                 semTake(CountSemID, WAIT_FOREVER);
+                 SmallCount1 ++;
+                 semGive(CountSemID, WAIT_FOREVER);
+               }
+               else{
+                 clock_gettime(CLOCK_REALTIME, &time);
+                 // Send message to MotorController with current time of block
+                 char res = msgQSend(queueSensorC1ID, &time, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
+                 if (res == ERROR){
+                   printf("Cannot send sensor 1 input into queue! Terminating...");
+                   exit(0);
+                 }
+
+                 semTake(CountSemID, WAIT_FOREVER);
+                 SmallCount1 ++;
+                 semGive(CountSemID, WAIT_FOREVER);
+               }
+             } // second small block
              else if (LastState == 3){
-               // Delay DOWN timer by resetting/overwriting
-               closeGateTimer1(4);
+               clock_gettime(CLOCK_REALTIME, &time);
+               // Send message to MotorController with current time of block
+               char res = msgQSend(queueSensorC1ID, &time, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
+               if (res == ERROR){
+                 printf("Cannot send sensor 1 input into queue! Terminating...");
+                 exit(0);
+               }
+               semTake(CountSemID, WAIT_FOREVER);
+               SmallCount1 ++;
+               semGive(CountSemID, WAIT_FOREVER);
              }
              break;
     case 3 : if (LastState != 0){
                // add count to large block
+               semTake(CountSemID, WAIT_FOREVER);
+               LargeCount1 ++;
+               semGive(CountSemID, WAIT_FOREVER);
              }
     default :
              break;
@@ -339,7 +421,7 @@ void CheckEndSensor0(void){
   char Count = readCountSensor(0);
   if (Count == 1){
     semTake(EndCountSemID, WAIT_FOREVER);
-    LargeCountSensor0 = CountSensor + Count;
+    LargeCountSensor0 ++;
     semGive(EndCountSemID, WAIT_FOREVER);
     }
 }
@@ -348,7 +430,7 @@ void CheckEndSensor1(void){
   Count = readCountSensor(1);
   if (Count == 1){
     semTake(EndCountSemID, WAIT_FOREVER);
-    LargeCountSensor1 = CountSensor + Count;
+    LargeCountSensor1 ++;
     semGive(EndCountSemID, WAIT_FOREVER);
   }
 }
@@ -357,21 +439,20 @@ void CheckEndSensor1(void){
 void Main(void){
   startMotor();
   int CheckSensor_id;
-  int MotorController_id;
-  int AnalyseConveyor0_id;
-  int AnalyseConveyor1_id;
+  int MotorController0_id;
+  int MotorController1_id;
   int Interface_id;
   // Set up message queues
-  // queueSensorC0ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
-  // if (queueSensorC0ID == NULL){
-  //   printf("Cannot create message queue! Terminating...");
-  //   exit(0);
-  // }
-  // queueSensorC1ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
-  // if (queueSensorC1ID == NULL){
-  //   printf("Cannot create message queue! Terminating...");
-  //   exit(0);
-  // }
+  queueSensorC0ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
+  if (queueSensorC0ID == NULL){
+    printf("Cannot create message queue! Terminating...");
+    exit(0);
+  }
+  queueSensorC1ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
+  if (queueSensorC1ID == NULL){
+    printf("Cannot create message queue! Terminating...");
+    exit(0);
+  }
   queueMotorC0ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
   if (queueMotorC0ID == NULL){
     printf("Cannot create message queue! Terminating...");
@@ -412,19 +493,13 @@ void Main(void){
   CheckSensor_id = taskSpawn("CheckSensor", 100, 0, 20000,
                       (FUNCPTR)CheckSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
-  AnalyseConveyor0_id = taskSpawn("AnalyseConveyor0", 101, 0, 20000,
-                      (FUNCPTR)AnalyseConveyor0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
-
-  AnalyseConveyor1_id = taskSpawn("AnalyseConveyor1", 101, 0, 20000,
-                      (FUNCPTR)AnalyseConveyor1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
-
   Interface_id = taskSpawn("Interface", 101, 0, 20000,
                       (FUNCPTR)Interface, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
-  MotorController_id = taskSpawn("MotorController0", 101, 0, 20000,
+  MotorController0_id = taskSpawn("MotorController0", 101, 0, 20000,
                       (FUNCPTR)MotorController, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
-  MotorController_id = taskSpawn("MotorController1", 101, 0, 20000,
+  MotorController1_id = taskSpawn("MotorController1", 101, 0, 20000,
                       (FUNCPTR)MotorController, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
 
   while(1){
@@ -438,12 +513,5 @@ void Main(void){
 // sensor 1 & 2, respectively.
 
 // TO BE DONE
-// Counter check needs to be implemented
-// timers need times!
 // Shutdown Code
 // Interface
-// Check timing on count sensor function - only on large block?
-// CHANGE ALL BLOCK LOGIC TO BE SIMPLER
-// Add previous Check
-// If encounter 0 then small block - set gates
-// Don't count large blocks?
