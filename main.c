@@ -305,12 +305,7 @@ if (Conveyor == 0){
                  }
                  else{
                    clock_gettime(CLOCK_REALTIME, &time);
-                   // Send message to MotorController with current time of block
-                   char res = msgQSend(queueSensorC0ID, &time, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
-                   if (res == ERROR){
-                     printf("Cannot send sensor 1 input into queue! Terminating...");
-                     exit(0);
-                   }
+                   
                    semTake(CountSemID, WAIT_FOREVER);
                    SmallCount0 ++;
                    semGive(CountSemID, WAIT_FOREVER);
@@ -318,12 +313,7 @@ if (Conveyor == 0){
                } // second small block
                else if (LastState == 3){
                  clock_gettime(CLOCK_REALTIME, &time);
-                 // Send message to MotorController with current time of block
-                 char res = msgQSend(queueSensorC0ID, &time, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
-                 if (res == ERROR){
-                   printf("Cannot send sensor 1 input into queue! Terminating...");
-                   exit(0);
-                 }
+
                  semTake(CountSemID, WAIT_FOREVER);
                  SmallCount0 ++;
                  semGive(CountSemID, WAIT_FOREVER);
@@ -353,12 +343,7 @@ else if (Conveyor == 1){
                }
                else{
                  clock_gettime(CLOCK_REALTIME, &time);
-                 // Send message to MotorController with current time of block
-                 char res = msgQSend(queueSensorC1ID, &time, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
-                 if (res == ERROR){
-                   printf("Cannot send sensor 1 input into queue! Terminating...");
-                   exit(0);
-                 }
+
 
                  semTake(CountSemID, WAIT_FOREVER);
                  SmallCount1 ++;
@@ -367,12 +352,7 @@ else if (Conveyor == 1){
              } // second small block
              else if (LastState == 3){
                clock_gettime(CLOCK_REALTIME, &time);
-               // Send message to MotorController with current time of block
-               char res = msgQSend(queueSensorC1ID, &time, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
-               if (res == ERROR){
-                 printf("Cannot send sensor 1 input into queue! Terminating...");
-                 exit(0);
-               }
+
                semTake(CountSemID, WAIT_FOREVER);
                SmallCount1 ++;
                semGive(CountSemID, WAIT_FOREVER);
