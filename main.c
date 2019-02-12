@@ -22,17 +22,11 @@
 #define UP 1
 #define DOWN 0
 
-char S[2] = {1, 0, 2}; // State 0 Small
-char L[2] = {1, 3, 2}; // State 1 Large
-char SS[2] = {0, 3, 0}; // State 2 Small-Small
-char LL[2] = {2, 3, 1}; // State 3 Large-Large
-char SL[2] = {0, 3, 1}; // State 4 Small-Large
-char LS[2] = {2, 3, 0}; // State 5 Large-Small
-char ResetState[2] = {0, 0, 0}; // State 6
-char ResetFlag;
+
+char BlockTimeQueue0[4]; // Put system time elapsed in this array to reset WD timers if there are several blocks in queue
+char BlockTimeQueue1[4];
+
 char GateState; // Check and Set GateState before execution (after timer)
-char C0StartFlag;
-char C1StartFlag;
 char SmallCount;
 char LargeCount;
 char LargeCountSensor0;
@@ -368,16 +362,16 @@ void Main(void){
   int AnalyseConveyor1_id;
   int Interface_id;
   // Set up message queues
-  queueSensorC0ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
-  if (queueSensorC0ID == NULL){
-    printf("Cannot create message queue! Terminating...");
-    exit(0);
-  }
-  queueSensorC1ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
-  if (queueSensorC1ID == NULL){
-    printf("Cannot create message queue! Terminating...");
-    exit(0);
-  }
+  // queueSensorC0ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
+  // if (queueSensorC0ID == NULL){
+  //   printf("Cannot create message queue! Terminating...");
+  //   exit(0);
+  // }
+  // queueSensorC1ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
+  // if (queueSensorC1ID == NULL){
+  //   printf("Cannot create message queue! Terminating...");
+  //   exit(0);
+  // }
   queueMotorC0ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
   if (queueMotorC0ID == NULL){
     printf("Cannot create message queue! Terminating...");
