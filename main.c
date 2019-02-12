@@ -139,6 +139,7 @@ void MotorController0(void){
         default : NextState = 0;
                   break;
       }
+      closeGateTimer0(2);
     }
     else if (State == UP){ // Up
       switch CheckGateState{
@@ -156,8 +157,18 @@ void MotorController0(void){
     }
   setGates(char NextState);
   GateState = NextState;
-  //closeGateTimer0(2);
-  //ShiftBuffer(0);
+  semTake(BlockTimeSemID, WAIT_FOREVER);
+  if (BlockTimePointer0 == 1){
+    BlockTimePointer0 = 0;
+  }
+  else if (BlockTimePointer0 > 1){
+    clock_gettime(CLOCK_REALTIME, &endtime);
+    char time = &endtime - BlockTimeQueue0[1];
+    closeGateTimer0(time); // Reset timer
+    ShiftBuffer(0);
+    BlockTimePointer0 --;
+  }
+  semGive(BlockTimeSemID);
   semGive(MotorStateSemID);
   // Check timing on calling this function/Include a delay/only on UP gate (i.e. large block)
   CheckEndSensor0();
@@ -189,6 +200,7 @@ void MotorController1(void){
         default : NextState = 0;
                   break;
       }
+      //openGateTimer1(2);
     }
     else if (State == UP){ // Up
       switch CheckGateState{
@@ -205,11 +217,21 @@ void MotorController1(void){
     }
     setGates(char NextState);
     GateState = NextState;
-    //closeGateTimer1(2);
-    //ShiftBuffer(1);
+    semTake(BlockTimeSemID, WAIT_FOREVER);
+    if (BlockTimePointer1 == 1){
+      BlockTimePointer1 = 0;
+    }
+    else if (BlockTimePointer1 > 1){
+      clock_gettime(CLOCK_REALTIME, &endtime);
+      char time = &endtime - BlockTimeQueue1[1];
+      closeGateTimer1(time); // Reset timer
+      ShiftBuffer(0);
+      BlockTimePointer1 --;
+    }
+    semGive(BlockTimeSemID);
     semGive(MotorStateSemID);
     // Check timing on calling this function/Include a delay/only on UP gate (i.e. large block)
-    CheckEndSensor0();
+    CheckEndSensor1();
   }
 }
 
@@ -303,26 +325,26 @@ if (Conveyor == 0){
       case 0 : // Small block
                if (LastState == 1){
                  if (BlockTimePointer0 != 0){
-                   openGateTimer0(2);
-                   //closeGateTimer0(4);
+                   //openGateTimer0(4);
+                   closeGateTimer0(2);
 
                    semTake(CountSemID, WAIT_FOREVER);
                    SmallCount0 ++;
-                   semGive(CountSemID, WAIT_FOREVER);
+                   semGive(CountSemID);
                    semTake(BlockTimeSemID, WAIT_FOREVER);
                    BlockTimePointer0 ++;
-                   semGive(BlockTimeSemID, WAIT_FOREVER)
+                   semGive(BlockTimeSemID);
                  }
                  else{
                    clock_gettime(CLOCK_REALTIME, &time);
 
                    semTake(CountSemID, WAIT_FOREVER);
                    SmallCount0 ++;
-                   semGive(CountSemID, WAIT_FOREVER);
+                   semGive(CountSemID);
                    semTake(BlockTimeSemID, WAIT_FOREVER);
                    BlockTimeQueue0[BlockTimePointer0] = &time;
                    BlockTimePointer0 ++;
-                   semGive(BlockTimeSemID, WAIT_FOREVER)
+                   semGive(BlockTimeSemID);
                  }
                } // second small block
                else if (LastState == 3){
@@ -330,18 +352,18 @@ if (Conveyor == 0){
 
                  semTake(CountSemID, WAIT_FOREVER);
                  SmallCount0 ++;
-                 semGive(CountSemID, WAIT_FOREVER);
+                 semGive(CountSemID);
                  semTake(BlockTimeSemID, WAIT_FOREVER);
                  BlockTimeQueue0[BlockTimePointer0] = &time;
                  BlockTimePointer0 ++;
-                 semGive(BlockTimeSemID, WAIT_FOREVER)
+                 semGive(BlockTimeSemID);
                }
                break;
       case 3 : if (LastState != 0){
                  // add count to large block
                  semTake(CountSemID, WAIT_FOREVER);
                  LargeCount0 ++;
-                 semGive(CountSemID, WAIT_FOREVER);
+                 semGive(CountSemID);
                }
       default :
                break;
@@ -352,26 +374,26 @@ else if (Conveyor == 1){
     case 0 : // Small block
              if (LastState == 1){
                if (BlockTimeQueue1 != 0){
-                 openGateTimer1(2);
-                 //closeGateTimer1(4);
+                 //openGateTimer1(4);
+                 closeGateTimer1(2);
 
                  semTake(CountSemID, WAIT_FOREVER);
                  SmallCount1 ++;
-                 semGive(CountSemID, WAIT_FOREVER);
+                 semGive(CountSemID);
                  semTake(BlockTimeSemID, WAIT_FOREVER);
                  BlockTimePointer1 ++;
-                 semGive(BlockTimeSemID, WAIT_FOREVER)
+                 semGive(BlockTimeSemID);
                }
                else{
                  clock_gettime(CLOCK_REALTIME, &time);
 
                  semTake(CountSemID, WAIT_FOREVER);
                  SmallCount1 ++;
-                 semGive(CountSemID, WAIT_FOREVER);
+                 semGive(CountSemID);
                  semTake(BlockTimeSemID, WAIT_FOREVER);
                  BlockTimeQueue0[BlockTimePointer1] = &time;
                  BlockTimePointer1 ++;
-                 semGive(BlockTimeSemID, WAIT_FOREVER)
+                 semGive(BlockTimeSemID);
                }
              } // second small block
              else if (LastState == 3){
@@ -379,18 +401,18 @@ else if (Conveyor == 1){
 
                semTake(CountSemID, WAIT_FOREVER);
                SmallCount1 ++;
-               semGive(CountSemID, WAIT_FOREVER);
+               semGive(CountSemID);
                semTake(BlockTimeSemID, WAIT_FOREVER);
                BlockTimeQueue0[BlockTimePointer1] = &time;
                BlockTimePointer1 ++;
-               semGive(BlockTimeSemID, WAIT_FOREVER)
+               semGive(BlockTimeSemID);
              }
              break;
     case 3 : if (LastState != 0){
                // add count to large block
                semTake(CountSemID, WAIT_FOREVER);
                LargeCount1 ++;
-               semGive(CountSemID, WAIT_FOREVER);
+               semGive(CountSemID);
              }
     default :
              break;
@@ -502,10 +524,6 @@ void Main(void){
   }
 }
 
-// readSizeSensors returns 0, 1, 2, 3 for no object, sensor 1, sensor 2, and
-// sensor 1 & 2, respectively.
-
 // TO BE DONE
 // Shutdown Code
 // Interface
-// Do we need semaphores to read global variables?
