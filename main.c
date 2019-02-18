@@ -58,6 +58,12 @@ void Interface(void){
     c = getchar();
     switch(c){
       case 'q': // Shutdown/Quit - Delete Tasks in correct order
+                printf("Shutting down... \n");
+                taskDelete(CheckSensor_id); // can you delete tasks outside of main?
+                taskDelete(MotorController0_id);
+                taskDelete(MotorController1_id);
+                printf("Goodbye! \n");
+                taskDelete(Interface_id); //  Can you delete a task you are in?
       case 'l': // Large block count 0
                 printf("Total Large blocks counted: %c \n", LargeCount0);
                 break;
@@ -90,6 +96,19 @@ void Interface(void){
       case 'x': // Large block count Conveyor 1
                 printf("Large block count for conveyor 1: %c \n", LargeCountSensor1);
                 break;
+      case 'h': printf("Welcome to block conveyor 4.0! \n
+                Press: \n
+                q to quit \n
+                l to show number of large blocks counted \n
+                s to show number of small blocks detected \n
+                o to show number of small blocks counted \n
+                p to show number of small blocks detected \n
+                k to reset the large block counter \n
+                a to reset the small block counter \n
+                z to show number of large blocks detected on conveyor 0 \n
+                x to show number of large blocks detected on conveyor 1 \n
+                h to see this message again \n");
+              break;
       default: break;
     }
 
@@ -157,19 +176,19 @@ void MotorController0(void){
     }
   setGates(char NextState);
   GateState = NextState;
+  semGive(MotorStateSemID);
   semTake(BlockTimeSemID, WAIT_FOREVER);
-  if (BlockTimePointer0 == 1){
+  if (BlockTimePointer0 == 1){ // Reset pointer
     BlockTimePointer0 = 0;
   }
-  else if (BlockTimePointer0 > 1){
+  else if (BlockTimePointer0 > 1){ // If pointer greater than 1 then there is another block on the conveyor
     clock_gettime(CLOCK_REALTIME, &endtime);
     char time = &endtime - BlockTimeQueue0[1];
-    closeGateTimer0(time); // Reset timer
+    closeGateTimer0(time); // Reset timer with remaining time
     ShiftBuffer(0);
     BlockTimePointer0 --;
   }
   semGive(BlockTimeSemID);
-  semGive(MotorStateSemID);
   // Check timing on calling this function/Include a delay/only on UP gate (i.e. large block)
   CheckEndSensor0();
   }
@@ -217,6 +236,7 @@ void MotorController1(void){
     }
     setGates(char NextState);
     GateState = NextState;
+    semGive(MotorStateSemID);
     semTake(BlockTimeSemID, WAIT_FOREVER);
     if (BlockTimePointer1 == 1){
       BlockTimePointer1 = 0;
@@ -225,11 +245,10 @@ void MotorController1(void){
       clock_gettime(CLOCK_REALTIME, &endtime);
       char time = &endtime - BlockTimeQueue1[1];
       closeGateTimer1(time); // Reset timer
-      ShiftBuffer(0);
+      ShiftBuffer(1);
       BlockTimePointer1 --;
     }
     semGive(BlockTimeSemID);
-    semGive(MotorStateSemID);
     // Check timing on calling this function/Include a delay/only on UP gate (i.e. large block)
     CheckEndSensor1();
   }
@@ -237,7 +256,7 @@ void MotorController1(void){
 
 //////////////////////////// Timers /////////////////////////
 
-void TimerT1Callback(State){ // Conveyor 0
+void TimerT1Callback(har State){ // Conveyor 0
   int res;
   // Send message to MotorController
   char res = msgQSend(queueMotorC0ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
@@ -246,7 +265,7 @@ void TimerT1Callback(State){ // Conveyor 0
     exit(0);
   }
 }
-void TimerT2Callback(State){ // Conveyor 1
+void TimerT2Callback(char State){ // Conveyor 1
   int res;
   // Send message to MotorController
   char res = msgQSend(queueMotorC0ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
@@ -255,7 +274,7 @@ void TimerT2Callback(State){ // Conveyor 1
     exit(0);
   }
 }
-void TimerT3Callback(State){ // Conveyor 0
+void TimerT3Callback(char State){ // Conveyor 0
   int res;
   // Send message to MotorController
   char res = msgQSend(queueMotorC0ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
@@ -264,7 +283,7 @@ void TimerT3Callback(State){ // Conveyor 0
     exit(0);
   }
 }
-void TimerT4Callback(State){ // Conveyor 1
+void TimerT4Callback(char State){ // Conveyor 1
   int res;
   // Send message to MotorController
   char res = msgQSend(queueMotorC1ID, &State, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
@@ -274,43 +293,43 @@ void TimerT4Callback(State){ // Conveyor 1
   }
 }
 
-void closeGateTimer0(void){
+void closeGateTimer0(char time){
 	printf("Creating close gate timer");
 
 	int res;
-  res = wdStart(timer_T1_ID, 2*sysClkRateGet(), (FUNCPTR)TimerT1Callback, DOWN);
+  res = wdStart(timer_T1_ID, time*sysClkRateGet(), (FUNCPTR)TimerT1Callback, DOWN);
   if (res == ERROR){
     printf("Cannot start the timer! Terminating...");
     exit(0);
     }
 }
 
-void closeGateTimer1(void){
+void closeGateTimer1(char time){
 	printf("Creating close gate timer");
 
 	int res;
-  res = wdStart(timer_T1_ID, 2*sysClkRateGet(), (FUNCPTR)TimerT2Callback, DOWN);
+  res = wdStart(timer_T1_ID, time*sysClkRateGet(), (FUNCPTR)TimerT2Callback, DOWN);
   if (res == ERROR){
     printf("Cannot start the timer! Terminating...");
     exit(0);
     }
 }
-void openGateTimer0(void){
+void openGateTimer0(char time){
 	printf("Creating close gate timer");
 
 	int res;
-  res = wdStart(timer_T1_ID, 2*sysClkRateGet(), (FUNCPTR)TimerT3Callback, UP);
+  res = wdStart(timer_T1_ID, time*sysClkRateGet(), (FUNCPTR)TimerT3Callback, UP);
   if (res == ERROR){
     printf("Cannot start the timer! Terminating...");
     exit(0);
     }
 }
 
-void openGateTimer1(void){
+void openGateTimer1(char time){
 	printf("Creating close gate timer");
 
 	int res;
-  res = wdStart(timer_T1_ID, 2*sysClkRateGet(), (FUNCPTR)TimerT4Callback, UP);
+  res = wdStart(timer_T1_ID, time*sysClkRateGet(), (FUNCPTR)TimerT4Callback, UP);
   if (res == ERROR){
     printf("Cannot start the timer! Terminating...");
     exit(0);
@@ -327,20 +346,22 @@ if (Conveyor == 0){
                  if (BlockTimePointer0 != 0){
                    //openGateTimer0(4);
                    closeGateTimer0(2);
-
+                   // Update count variables
                    semTake(CountSemID, WAIT_FOREVER);
                    SmallCount0 ++;
                    semGive(CountSemID);
+                   // Update pointer for block queue
                    semTake(BlockTimeSemID, WAIT_FOREVER);
                    BlockTimePointer0 ++;
                    semGive(BlockTimeSemID);
                  }
                  else{
                    clock_gettime(CLOCK_REALTIME, &time);
-
+                   // Update count variables
                    semTake(CountSemID, WAIT_FOREVER);
                    SmallCount0 ++;
                    semGive(CountSemID);
+                   // Update pointer for bock queue
                    semTake(BlockTimeSemID, WAIT_FOREVER);
                    BlockTimeQueue0[BlockTimePointer0] = &time;
                    BlockTimePointer0 ++;
@@ -349,10 +370,11 @@ if (Conveyor == 0){
                } // second small block
                else if (LastState == 3){
                  clock_gettime(CLOCK_REALTIME, &time);
-
+                 // Update count variables
                  semTake(CountSemID, WAIT_FOREVER);
                  SmallCount0 ++;
                  semGive(CountSemID);
+                 // Update block queue pointer
                  semTake(BlockTimeSemID, WAIT_FOREVER);
                  BlockTimeQueue0[BlockTimePointer0] = &time;
                  BlockTimePointer0 ++;
@@ -376,20 +398,22 @@ else if (Conveyor == 1){
                if (BlockTimeQueue1 != 0){
                  //openGateTimer1(4);
                  closeGateTimer1(2);
-
+                 // Update count variable
                  semTake(CountSemID, WAIT_FOREVER);
                  SmallCount1 ++;
                  semGive(CountSemID);
+                 // Update block queue pointers
                  semTake(BlockTimeSemID, WAIT_FOREVER);
                  BlockTimePointer1 ++;
                  semGive(BlockTimeSemID);
                }
                else{
                  clock_gettime(CLOCK_REALTIME, &time);
-
+                 // Update count variable
                  semTake(CountSemID, WAIT_FOREVER);
                  SmallCount1 ++;
                  semGive(CountSemID);
+                 // Updte block queue pointer
                  semTake(BlockTimeSemID, WAIT_FOREVER);
                  BlockTimeQueue0[BlockTimePointer1] = &time;
                  BlockTimePointer1 ++;
@@ -398,10 +422,11 @@ else if (Conveyor == 1){
              } // second small block
              else if (LastState == 3){
                clock_gettime(CLOCK_REALTIME, &time);
-
+               // Update count variable
                semTake(CountSemID, WAIT_FOREVER);
                SmallCount1 ++;
                semGive(CountSemID);
+               // Update block queue pointer
                semTake(BlockTimeSemID, WAIT_FOREVER);
                BlockTimeQueue0[BlockTimePointer1] = &time;
                BlockTimePointer1 ++;
@@ -516,6 +541,18 @@ void Main(void){
 
   MotorController1_id = taskSpawn("MotorController1", 101, 0, 20000,
                       (FUNCPTR)MotorController, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,);
+  printf("Welcome to block conveyor 4.0! \n
+          Press: \n
+          q to quit \n
+          l to show number of large blocks counted \n
+          s to show number of small blocks detected \n
+          o to show number of small blocks counted \n
+          p to show number of small blocks detected \n
+          k to reset the large block counter \n
+          a to reset the small block counter \n
+          z to show number of large blocks detected on conveyor 0 \n
+          x to show number of large blocks detected on conveyor 1 \n
+          h to see this message again \n");
 
   while(1){
     // Loops forever and let the tasks/functions sort themselves out.
@@ -526,4 +563,3 @@ void Main(void){
 
 // TO BE DONE
 // Shutdown Code
-// Interface
