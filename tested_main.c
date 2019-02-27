@@ -201,6 +201,7 @@ void MotorController0(void){
   semTake(BlockTimeSemID, WAIT_FOREVER);
   if (BlockTimePointer0 != 0){
     BlockTimePointer0 = 0;
+    printf("BlockTimePointer0: %d \n", BlockTimePointer0);
   }
   semGive(BlockTimeSemID);
 
@@ -215,7 +216,7 @@ void MotorController1(void){
   char UP = 1;
   while(1){
     semTake(Timer1SemID, WAIT_FOREVER);
-    printf("Got MotorControl 0 semaphore! \n");
+    printf("Got MotorControl 1 semaphore! \n");
     res = msgQReceive(queueMotorC1ID, &State, 1, WAIT_FOREVER);
     if (res == ERROR){
       printf("Error reading sensor 0 message queue! Terminating...");
@@ -269,6 +270,7 @@ void MotorController1(void){
     semTake(BlockTimeSemID, WAIT_FOREVER);
     if (BlockTimePointer1 != 0){
       BlockTimePointer1 = 0;
+      printf("BlockTimePointer1: %d \n", BlockTimePointer1);
     }
     semGive(BlockTimeSemID);
 
@@ -543,7 +545,7 @@ void CheckSensor(){
       AnalyseConveyor(CurrentState1, LastState1, 1);
     }
     LastState1 = CurrentState1;
-    taskDelay(0.25 * sysClockRateGet());
+    taskDelay(0.25 * sysClkRateGet());
   }
 }
 
@@ -595,12 +597,12 @@ void main(void){
     printf("Cannot create analysis semaphore! Terminating...");
     exit(0);
   }
-  Timer0SemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
+  Timer0SemID = semBCreate(SEM_Q_FIFO, SEM_EMPTY);
   if (Timer0SemID == NULL){
     printf("Cannot create analysis semaphore! Terminating...");
     exit(0);
   }
-  Timer1SemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
+  Timer1SemID = semBCreate(SEM_Q_FIFO, SEM_EMPTY);
   if (Timer0SemID == NULL){
     printf("Cannot create analysis semaphore! Terminating...");
     exit(0);
