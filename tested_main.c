@@ -543,7 +543,7 @@ void CheckSensor(){
       AnalyseConveyor(CurrentState1, LastState1, 1);
     }
     LastState1 = CurrentState1;
-    taskDelay(0.25 * sysClockRateGet);
+    taskDelay(0.25 * sysClockRateGet());
   }
 }
 
