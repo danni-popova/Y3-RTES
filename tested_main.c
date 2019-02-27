@@ -47,16 +47,16 @@ void Interface(void){
                 printf("Goodbye! \n");
                 taskDelete(Interface_id); */
       case 'l':
-                printf("Total Large blocks counted: %c \n", LargeCount0);
+                printf("Total Large blocks counted: %d \n", LargeCount0);
                 break;
       case 's':
-                printf("Total Small blocks detected: %c \n", SmallCount0);
+                printf("Total Small blocks detected: %d \n", SmallCount0);
                 break;
       case 'o':
-                printf("Total Large blocks counted: %c \n", LargeCount1);
+                printf("Total Large blocks counted: %d \n", LargeCount1);
                 break;
       case 'p':
-                printf("Total Small blocks detected: %c \n", SmallCount1);
+                printf("Total Small blocks detected: %d \n", SmallCount1);
                 break;
       case 'k':
                 semTake(EndCountSemID, WAIT_FOREVER);
@@ -75,10 +75,10 @@ void Interface(void){
                 semGive(CountSemID);
                 break;
       case 'z':
-                printf("Large block count for conveyor 0: %c \n", LargeCountSensor0);
+                printf("Large block count for conveyor 0: %d \n", LargeCountSensor0);
                 break;
       case 'x':
-                printf("Large block count for conveyor 1: %c \n", LargeCountSensor1);
+                printf("Large block count for conveyor 1: %d \n", LargeCountSensor1);
                 break;
 /*      case 'h': printf("Welcome to block conveyor 4.0! \n
                 Press: \n
@@ -314,6 +314,7 @@ void Sendmessage(conveyor, updown){
 }
 
 void setupTimer1(){
+  int res;
   timer_T1_ID = wdCreate();
   if (timer_T1_ID == NULL) {
     printf("Cannot create timer!!! Terminating this task...");
@@ -327,6 +328,7 @@ void setupTimer1(){
 }
 
 void setupTimer2(){
+  int res;
   timer_T2_ID = wdCreate();
   if (timer_T2_ID == NULL) {
     printf("Cannot create timer!!! Terminating this task...");
@@ -340,6 +342,7 @@ void setupTimer2(){
 }
 
 void setupTimer3(){
+  int res;
   timer_T3_ID = wdCreate();
   if (timer_T3_ID == NULL) {
     printf("Cannot create timer!!! Terminating this task...");
@@ -353,6 +356,7 @@ void setupTimer3(){
 }
 
 void setupTimer4(){
+  int res;
   timer_T4_ID = wdCreate();
   if (timer_T4_ID == NULL) {
     printf("Cannot create timer!!! Terminating this task...");
@@ -366,6 +370,7 @@ void setupTimer4(){
 }
 
 void setupTimer5(){
+  int res;
   timer_T5_ID = wdCreate();
   if (timer_T5_ID == NULL) {
     printf("Cannot create timer!!! Terminating this task...");
@@ -379,6 +384,7 @@ void setupTimer5(){
 }
 
 void setupTimer6(){
+  int res;
   timer_T6_ID = wdCreate();
   if (timer_T6_ID == NULL) {
     printf("Cannot create timer!!! Terminating this task...");
@@ -392,7 +398,6 @@ void setupTimer6(){
 }
 
 void AnalyseConveyor(CurrentState, LastState, Conveyor){
-int res;
 char up = 1;
 char down = 0;
 printf("Current state %d \n", CurrentState);
@@ -409,7 +414,9 @@ if (Conveyor == 0){
                   printf("Setting open gate timer \n");
                   setupTimer3();
                   Sendmessage(0, up);
-
+                  semTake(CountSemID, WAIT_FOREVER);
+                  SmallCount0 ++;
+                  semGive(CountSemID);
                   semTake(BlockTimeSemID, WAIT_FOREVER);
                   BlockTimePointer0 ++;
                   semGive(BlockTimeSemID);
@@ -419,30 +426,36 @@ if (Conveyor == 0){
                   timer_T3_ID = wdCreate();
                   setupTimer3();
                   Sendmessage(0, up);
-
+                  semTake(CountSemID, WAIT_FOREVER);
+                  SmallCount0 ++;
+                  semGive(CountSemID);
                  }
                }
                else if (LastState == 3){
                  printf("Second small block detected! \n");
-
+                 semTake(CountSemID, WAIT_FOREVER);
+                 SmallCount0 ++;
+                 semGive(CountSemID);
                  printf("Setting open gate timer \n");
                  setupTimer3();
                  Sendmessage(0, up);
                }
                break;
       case 3 : if (LastState != 0){
+                 semTake(BlockTimeSemID, WAIT_FOREVER);
                  if (BlockTimePointer1 > 0){
-                   semTake(BlockTimeSemID, WAIT_FOREVER);
                    printf("Setting open gate timer \n");
                    setupTimer3();
                    Sendmessage(0, up);
                    printf("Setting close gate timer \n");
                    setupTimer5();
                    Sendmessage(0, down);
-                   semGive(BlockTimeSemID);
                  }
+                 semGive(BlockTimeSemID);
+                 semTake(CountSemID, WAIT_FOREVER);
                  printf("Large block detected! \n");
-
+                 LargeCount0 ++;
+                 semGive(CountSemID);
                }
                break;
       default :
@@ -461,7 +474,9 @@ else if (Conveyor == 1){
                 printf("Setting open gate timer \n");
                 setupTimer4();
                 Sendmessage(1, up);
-
+                semTake(CountSemID, WAIT_FOREVER);
+                SmallCount1 ++;
+                semGive(CountSemID);
                 semTake(BlockTimeSemID, WAIT_FOREVER);
                 BlockTimePointer1 ++;
                 semGive(BlockTimeSemID);
@@ -470,12 +485,16 @@ else if (Conveyor == 1){
                 printf("Setting open gate timer \n");
                 setupTimer4();
                 Sendmessage(1, up);
-
+                semTake(CountSemID, WAIT_FOREVER);
+                SmallCount1 ++;
+                semGive(CountSemID);
               }
             }
             else if (LastState == 3){
               printf("Second small block detected! \n");
-
+              semTake(CountSemID, WAIT_FOREVER);
+              SmallCount1 ++;
+              semGive(CountSemID);
               printf("Setting open gate timer \n");
               setupTimer4();
               Sendmessage(1, up);
@@ -492,6 +511,10 @@ else if (Conveyor == 1){
                  Sendmessage(1, down);
                }
                semGive(BlockTimeSemID);
+               semTake(CountSemID, WAIT_FOREVER);
+               printf("Large block detected! \n");
+               LargeCount1 ++;
+               semGive(CountSemID);
              }
              break;
     default :
