@@ -313,12 +313,90 @@ void Sendmessage(conveyor, updown){
   }
 }
 
+void setupTimer1(){
+  timer_T1_ID = wdCreate();
+  if (timer_T1_ID == NULL) {
+    printf("Cannot create timer!!! Terminating this task...");
+    exit(0);
+  }
+  res = wdStart(timer_T1_ID, 2 * sysClkRateGet(), (FUNCPTR)TimerT1Callback, 0);
+  if (res == ERROR){
+    printf("Cannot start the timer! Terminating... \n");
+    exit(0);
+  }
+}
+
+void setupTimer2(){
+  timer_T2_ID = wdCreate();
+  if (timer_T2_ID == NULL) {
+    printf("Cannot create timer!!! Terminating this task...");
+    exit(0);
+  }
+  res = wdStart(timer_T2_ID, 2 * sysClkRateGet(), (FUNCPTR)TimerT2Callback, 0);
+  if (res == ERROR){
+    printf("Cannot start the timer! Terminating... \n");
+    exit(0);
+  }
+}
+
+void setupTimer3(){
+  timer_T3_ID = wdCreate();
+  if (timer_T3_ID == NULL) {
+    printf("Cannot create timer!!! Terminating this task...");
+    exit(0);
+  }
+  res = wdStart(timer_T3_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT3Callback, 0);
+  if (res == ERROR){
+    printf("Cannot start the timer! Terminating... \n");
+    exit(0);
+  }
+}
+
+void setupTimer4(){
+  timer_T4_ID = wdCreate();
+  if (timer_T4_ID == NULL) {
+    printf("Cannot create timer!!! Terminating this task...");
+    exit(0);
+  }
+  res = wdStart(timer_T4_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT4Callback, 0);
+  if (res == ERROR){
+    printf("Cannot start the timer! Terminating... \n");
+    exit(0);
+  }
+}
+
+void setupTimer5(){
+  timer_T5_ID = wdCreate();
+  if (timer_T5_ID == NULL) {
+    printf("Cannot create timer!!! Terminating this task...");
+    exit(0);
+  }
+  res = wdStart(timer_T5_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT5Callback, 0);
+  if (res == ERROR){
+    printf("Cannot start the timer! Terminating... \n");
+    exit(0);
+  }
+}
+
+void setupTimer6(){
+  timer_T6_ID = wdCreate();
+  if (timer_T6_ID == NULL) {
+    printf("Cannot create timer!!! Terminating this task...");
+    exit(0);
+  }
+  res = wdStart(timer_T6_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT6Callback, 0);
+  if (res == ERROR){
+    printf("Cannot start the timer! Terminating... \n");
+    exit(0);
+  }
+}
+
 void AnalyseConveyor(CurrentState, LastState, Conveyor){
 int res;
 char up = 1;
 char down = 0;
-printf("Current state %d", CurrentState);
-printf("Laste state %d", LastState);
+printf("Current state %d \n", CurrentState);
+printf("Laste state %d \n", LastState);
 if (Conveyor == 0){
 	printf("Detected on Conveyor 0! \n");
     switch(CurrentState){
@@ -326,28 +404,10 @@ if (Conveyor == 0){
               if (LastState == 1){
                 if (BlockTimePointer0 == 0){
                   printf("Setting close gate timer \n");
-                  timer_T1_ID = wdCreate();
-                  if (timer_T1_ID == NULL) {
-                    printf("Cannot create timer!!! Terminating this task...");
-                    exit(0);
-                  }
-                  res = wdStart(timer_T1_ID, 2 * sysClkRateGet(), (FUNCPTR)TimerT1Callback, 0);
-          				if (res == ERROR){
-          					printf("Cannot start the timer! Terminating... \n");
-          					exit(0);
-          				}
+                  setupTimer1();
                   Sendmessage(0, down);
                   printf("Setting open gate timer \n");
-                  timer_T3_ID = wdCreate();
-                  if (timer_T3_ID == NULL) {
-                    printf("Cannot create timer!!! Terminating this task...");
-                    exit(0);
-                  }
-                  res = wdStart(timer_T3_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT3Callback, 0);
-        					if (res == ERROR){
-          					printf("Cannot start the timer! Terminating... \n");
-          					exit(0);
-          				}
+                  setupTimer3();
                   Sendmessage(0, up);
                   semTake(CountSemID, WAIT_FOREVER);
                   SmallCount0 ++;
@@ -359,15 +419,7 @@ if (Conveyor == 0){
                 else{
                   printf("Setting open gate timer \n");
                   timer_T3_ID = wdCreate();
-                  if (timer_T3_ID == NULL) {
-                    printf("Cannot create timer!!! Terminating this task...");
-                    exit(0);
-                  }
-                  res = wdStart(timer_T3_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT3Callback, 0);
-         					if (res == ERROR){
-             				printf("Cannot start the timer! Terminating... \n");
-             				exit(0);
-           				}
+                  setupTimer3();
                   Sendmessage(0, up);
                   semTake(CountSemID, WAIT_FOREVER);
                   SmallCount0 ++;
@@ -380,16 +432,7 @@ if (Conveyor == 0){
                  SmallCount0 ++;
                  semGive(CountSemID);
                  printf("Setting open gate timer \n");
-                 timer_T3_ID = wdCreate();
-                 if (timer_T3_ID == NULL) {
-                   printf("Cannot create timer!!! Terminating this task...");
-                   exit(0);
-                 }
-                 res = wdStart(timer_T3_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT3Callback, 0);
-                 if (res == ERROR){
-                   printf("Cannot start the timer! Terminating... \n");
-                   exit(0);
-                 }
+                 setupTimer3();
                  Sendmessage(0, up);
                }
                break;
@@ -397,28 +440,10 @@ if (Conveyor == 0){
                  semTake(BlockTimeSemID, WAIT_FOREVER);
                  if (BlockTimePointer1 > 0){
                    printf("Setting open gate timer \n");
-                   timer_T3_ID = wdCreate();
-                   if (timer_T3_ID == NULL) {
-                     printf("Cannot create timer!!! Terminating this task...");
-                     exit(0);
-                   }
-                   res = wdStart(timer_T3_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT3Callback, 0);
-                   if (res == ERROR){
-                    printf("Cannot start the timer! Terminating... \n");
-                    exit(0);
-                   }
+                   setupTimer3();
                    Sendmessage(0, up);
                    printf("Setting close gate timer \n");
-                   timer_T5_ID = wdCreate();
-                   if (timer_T5_ID == NULL) {
-                     printf("Cannot create timer!!! Terminating this task...");
-                     exit(0);
-                   }
-                   res = wdStart(timer_T5_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT5Callback, 0);
-                   if (res == ERROR){
-                     printf("Cannot start the timer! Terminating... \n");
-                     exit(0);
-                   }
+                   setupTimer5();
                    Sendmessage(0, down);
                  }
                  semGive(BlockTimeSemID);
@@ -439,28 +464,10 @@ else if (Conveyor == 1){
             if (LastState == 1){
               if (BlockTimePointer1 == 0){
               	printf("Setting close gate timer");
-                timer_T2_ID = wdCreate();
-                if (timer_T2_ID == NULL) {
-                  printf("Cannot create timer!!! Terminating this task...");
-                  exit(0);
-                }
-                res = wdStart(timer_T2_ID, 2 * sysClkRateGet(), (FUNCPTR)TimerT2Callback, 0);
-                if (res == ERROR){
-                  printf("Cannot start the timer! Terminating... \n");
-                  exit(0);
-                }
+                setupTimer2();
                 Sendmessage(1, down);
                 printf("Setting open gate timer \n");
-                timer_T4_ID = wdCreate();
-                if (timer_T4_ID == NULL) {
-                  printf("Cannot create timer!!! Terminating this task...");
-                  exit(0);
-                }
-                res = wdStart(timer_T4_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT4Callback, 0);
-                if (res == ERROR){
-                  printf("Cannot start the timer! Terminating... \n");
-                  exit(0);
-                }
+                setupTimer4();
                 Sendmessage(1, up);
                 semTake(CountSemID, WAIT_FOREVER);
                 SmallCount1 ++;
@@ -471,16 +478,7 @@ else if (Conveyor == 1){
               }
               else{
                 printf("Setting open gate timer \n");
-                timer_T4_ID = wdCreate();
-                if (timer_T4_ID == NULL) {
-                  printf("Cannot create timer!!! Terminating this task...");
-                  exit(0);
-                }
-                res = wdStart(timer_T4_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT4Callback, 0);
-                if (res == ERROR){
-                  printf("Cannot start the timer! Terminating... \n");
-                  exit(0);
-                }
+                setupTimer4();
                 Sendmessage(1, up);
                 semTake(CountSemID, WAIT_FOREVER);
                 SmallCount1 ++;
@@ -493,16 +491,7 @@ else if (Conveyor == 1){
               SmallCount1 ++;
               semGive(CountSemID);
               printf("Setting open gate timer \n");
-              timer_T4_ID = wdCreate();
-              if (timer_T4_ID == NULL) {
-                printf("Cannot create timer!!! Terminating this task...");
-                exit(0);
-              }
-              res = wdStart(timer_T4_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT4Callback, 0);
-              if (res == ERROR){
-                printf("Cannot start the timer! Terminating... \n");
-                exit(0);
-              }
+              setupTimer4();
               Sendmessage(1, up);
             }
             break;
@@ -510,28 +499,10 @@ else if (Conveyor == 1){
                semTake(BlockTimeSemID, WAIT_FOREVER);
                if (BlockTimePointer1 > 0){
                  printf("Setting open gate timer \n");
-                 timer_T4_ID = wdCreate();
-                 if (timer_T4_ID == NULL) {
-                   printf("Cannot create timer!!! Terminating this task...");
-                   exit(0);
-                 }
-                 res = wdStart(timer_T4_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT4Callback, 0);
-                 if (res == ERROR){
-                   printf("Cannot start the timer! Terminating... \n");
-                   exit(0);
-                 }
+                 setupTimer4();
                  Sendmessage(1, up);
                  printf("Setting close gate timer \n");
-                 timer_T6_ID = wdCreate();
-                 if (timer_T6_ID == NULL) {
-                   printf("Cannot create timer!!! Terminating this task...");
-                   exit(0);
-                 }
-                 res = wdStart(timer_T6_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT6Callback, 0);
-                 if (res == ERROR){
-                   printf("Cannot start the timer! Terminating... \n");
-                   exit(0);
-                 }
+                 setupTimer6();
                  Sendmessage(1, down);
                }
                semGive(BlockTimeSemID);
@@ -629,16 +600,16 @@ void main(void){
     exit(0);
   }
   /*// Set up tasks*/
-  CheckSensor_id = taskSpawn("CheckSensor", 100, 0, 20000,
+  CheckSensor_id = taskSpawn("CheckSensor", 95, 0, 20000,
                       (FUNCPTR)CheckSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
-  Interface_id = taskSpawn("Interface", 102, 0, 20000,
+  Interface_id = taskSpawn("Interface", 97, 0, 20000,
                       (FUNCPTR)Interface, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
-  MotorController0_id = taskSpawn("MotorController0", 101, 0, 20000,
+  MotorController0_id = taskSpawn("MotorController0", 96, 0, 20000,
                       (FUNCPTR)MotorController0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
-  MotorController1_id = taskSpawn("MotorController1", 101, 0, 20000,
+  MotorController1_id = taskSpawn("MotorController1", 96, 0, 20000,
                       (FUNCPTR)MotorController1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
   /*printf("Welcome to block conveyor 4.0! \n" "Press: \n" q to quit \n l to show number of large blocks counted \n s to show number of small blocks detected \n o to show number of small blocks counted \n p to show number of small blocks detected \n k to reset the large block counter \n a to reset the small block counter \n z to show number of large blocks detected on conveyor 0 \n x to show number of large blocks detected on conveyor 1 \n h to see this message again \n ");*/
   taskDelay(60 * sysClkRateGet());
