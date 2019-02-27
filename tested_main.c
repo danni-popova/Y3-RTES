@@ -96,7 +96,7 @@ void Interface(void){
   }
 }
 
-void TimerT1Callback(){ /* Close Gate 0 */
+void TimerT1Callback(void){ /* Close Gate 0 */
   int res;
   char down = 0;
   res = msgQSend(queueMotorC0ID, &down, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
@@ -105,7 +105,7 @@ void TimerT1Callback(){ /* Close Gate 0 */
     exit(0);
   }
 }
-void TimerT2Callback(){ /* Close Gate 1 */
+void TimerT2Callback(void){ /* Close Gate 1 */
   int res;
   char down = 0;
   res = msgQSend(queueMotorC1ID, &down, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
@@ -114,7 +114,7 @@ void TimerT2Callback(){ /* Close Gate 1 */
     exit(0);
   }
 }
-void TimerT3Callback(){ /* Open Gate 0 */
+void TimerT3Callback(void){ /* Open Gate 0 */
   int res;
   char up = 1;
   res = msgQSend(queueMotorC0ID, &up, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
@@ -123,7 +123,7 @@ void TimerT3Callback(){ /* Open Gate 0 */
     exit(0);
   }
 }
-void TimerT4Callback(){ /* Open Gate 1 */
+void TimerT4Callback(void){ /* Open Gate 1 */
   int res;
   char up = 1;
   res = msgQSend(queueMotorC1ID, &up, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
@@ -132,7 +132,7 @@ void TimerT4Callback(){ /* Open Gate 1 */
     exit(0);
   }
 }
-void TimerT5Callback(){ /* Close Gate 0 */
+void TimerT5Callback(void){ /* Close Gate 0 */
   int res;
   char down = 0;
   res = msgQSend(queueMotorC0ID, &down, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
@@ -141,7 +141,7 @@ void TimerT5Callback(){ /* Close Gate 0 */
     exit(0);
   }
 }
-void TimerT6Callback(){ /* Close Gate 1 */
+void TimerT6Callback(void){ /* Close Gate 1 */
   int res;
   char down = 0;
   res = msgQSend(queueMotorC1ID, &down, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
@@ -460,6 +460,13 @@ void main(void){
   int MotorController0_id;
   int MotorController1_id;
   int Interface_id;
+
+  timer_T1_ID = wdCreate();
+  timer_T2_ID = wdCreate();
+  timer_T3_ID = wdCreate();
+  timer_T4_ID = wdCreate();
+  timer_T5_ID = wdCreate();
+  timer_T6_ID = wdCreate();
 
   queueMotorC0ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
   if (queueMotorC0ID == NULL){
