@@ -409,9 +409,7 @@ if (Conveyor == 0){
                   printf("Setting open gate timer \n");
                   setupTimer3();
                   Sendmessage(0, up);
-                  semTake(CountSemID, WAIT_FOREVER);
-                  SmallCount0 ++;
-                  semGive(CountSemID);
+
                   semTake(BlockTimeSemID, WAIT_FOREVER);
                   BlockTimePointer0 ++;
                   semGive(BlockTimeSemID);
@@ -421,36 +419,30 @@ if (Conveyor == 0){
                   timer_T3_ID = wdCreate();
                   setupTimer3();
                   Sendmessage(0, up);
-                  semTake(CountSemID, WAIT_FOREVER);
-                  SmallCount0 ++;
-                  semGive(CountSemID);
+
                  }
                }
                else if (LastState == 3){
                  printf("Second small block detected! \n");
-                 semTake(CountSemID, WAIT_FOREVER);
-                 SmallCount0 ++;
-                 semGive(CountSemID);
+
                  printf("Setting open gate timer \n");
                  setupTimer3();
                  Sendmessage(0, up);
                }
                break;
       case 3 : if (LastState != 0){
-                 semTake(BlockTimeSemID, WAIT_FOREVER);
                  if (BlockTimePointer1 > 0){
+                   semTake(BlockTimeSemID, WAIT_FOREVER);
                    printf("Setting open gate timer \n");
                    setupTimer3();
                    Sendmessage(0, up);
                    printf("Setting close gate timer \n");
                    setupTimer5();
                    Sendmessage(0, down);
+                   semGive(BlockTimeSemID);
                  }
-                 semGive(BlockTimeSemID);
-                 semTake(CountSemID, WAIT_FOREVER);
                  printf("Large block detected! \n");
-                 LargeCount0 ++;
-                 semGive(CountSemID);
+
                }
                break;
       default :
@@ -469,9 +461,7 @@ else if (Conveyor == 1){
                 printf("Setting open gate timer \n");
                 setupTimer4();
                 Sendmessage(1, up);
-                semTake(CountSemID, WAIT_FOREVER);
-                SmallCount1 ++;
-                semGive(CountSemID);
+
                 semTake(BlockTimeSemID, WAIT_FOREVER);
                 BlockTimePointer1 ++;
                 semGive(BlockTimeSemID);
@@ -480,16 +470,12 @@ else if (Conveyor == 1){
                 printf("Setting open gate timer \n");
                 setupTimer4();
                 Sendmessage(1, up);
-                semTake(CountSemID, WAIT_FOREVER);
-                SmallCount1 ++;
-                semGive(CountSemID);
+
               }
             }
             else if (LastState == 3){
               printf("Second small block detected! \n");
-              semTake(CountSemID, WAIT_FOREVER);
-              SmallCount1 ++;
-              semGive(CountSemID);
+
               printf("Setting open gate timer \n");
               setupTimer4();
               Sendmessage(1, up);
@@ -506,10 +492,6 @@ else if (Conveyor == 1){
                  Sendmessage(1, down);
                }
                semGive(BlockTimeSemID);
-               semTake(CountSemID, WAIT_FOREVER);
-               printf("Large block detected! \n");
-               LargeCount1 ++;
-               semGive(CountSemID);
              }
              break;
     default :
