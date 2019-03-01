@@ -18,6 +18,14 @@ char oldSensorReading[2] = { 0, 0 };
 WDOG_ID closeGatesTimerID;
 WDOG_ID openGatesTimerID;
 
+
+WDOG_ID createTimer(void) /* Create a new timer for gate operation */
+{
+	WDOG_ID operateGateTimer;
+	operateGateTimer = wdCreate();
+	return operateGateTimer;
+}
+
 void openGates(void)
 {
 	setGates(0);
@@ -26,7 +34,7 @@ void openGates(void)
 void closeGates(void)
 {
 	setGates(3);
-	wdStart(openGatesTimerID, 1.5 * sysClkRateGet(), (FUNCPTR)openGates, 0);
+	wdStart(openGatesTimerID, 2 * sysClkRateGet(), (FUNCPTR)openGates, 0);
 }
 
 void ReadSensor(unsigned char belt)
@@ -39,34 +47,33 @@ void ReadSensor(unsigned char belt)
 	
 	if(newSensorReading[belt] != oldSensorReading[belt])
 	{
-		printf("\nNew state on belt %c", belt);
+		printf("\nNew state on belt %d", belt);
 		
 		switch(newSensorReading[belt])
 		{
 			case 0 :
-				printf("\nNo blocks in front of size sensors on belt %c", belt);
-				
+				printf("\nNo blocks in front of size sensors on belt %d", belt);
 				if(oldSensorReading[belt] == 1)
-					printf("Small block detected.");
-				
-				/* To start timer */
-				wdStart(closeGatesTimerID, 2 * sysClkRateGet(), (FUNCPTR)closeGates, 0);
-				
+					{
+						printf("Small block detected.");
+						wdStart(createTimer(), 3 * sysClkRateGet(), (FUNCPTR)closeGates, 0);
+					}
 				break;
 			case 1: 
-				printf("\nBlock in front of first size belt on belt %c", belt);
+				printf("\nBlock in front of first size belt on belt %d", belt);
 				break;
 			case 2:
-				printf("\nBlock in front of second size belt on belt %c", belt);
+				printf("\nBlock in front of second size belt on belt %d", belt);
 				break;
 			case 3:
-				printf("\nBlock(s) in front of both size sensors on belt %c", belt);
+				printf("\nBlock(s) in front of both size sensors on belt %d", belt);
 				break;
 		}
 		
 		oldSensorReading[belt] = newSensorReading[belt];
 	}
 }
+
 
 void run(void)
 {
