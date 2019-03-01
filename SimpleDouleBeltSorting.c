@@ -1,5 +1,4 @@
-/* Author: Yordanka Popova up782716@myport.ac.uk */
-
+/* Author : Yordanka Popova up782716@myport.ac.uk */
 #include "vxWorks.h"
 #include "taskLib.h"
 #include "stdlib.h"
@@ -12,14 +11,15 @@
 char LEFT = 1; 
 char RIGHT = 0;
 
+/* Counters */
+int smallBlocks, bigBlocks, totalBlocks = 0;
+
 /* Arrays to hold old and new sensors readings for both belts */
 char newSensorReading[2] = { 0, 0 };
 char oldSensorReading[2] = { 0, 0 };
 
 /* Timer ID to control gates */
-WDOG_ID closeGatesTimerID;
 WDOG_ID openGatesTimerID;
-
 
 WDOG_ID createTimer(void) /* Create a new timer for gate operation */
 {
@@ -39,6 +39,12 @@ void closeGates(char belt)
 	wdStart(openGatesTimerID, 2 * sysClkRateGet(), (FUNCPTR)openGates, 0);
 }
 
+void PrintCounters(void)
+{
+	bigBlocks = totalBlocks - smallBlocks;
+	printf("\nSmall blocks: %d\nBig blocks: %d\nTotal blocks: %d", smallBlocks, bigBlocks, totalBlocks);
+}
+
 void ReadSensor(unsigned char belt)
 {
 	/* Reset sensors - mandatory for reading */
@@ -48,27 +54,20 @@ void ReadSensor(unsigned char belt)
 	newSensorReading[belt] = readSizeSensors(belt);
 	
 	if(newSensorReading[belt] != oldSensorReading[belt])
-	{
-		printf("\nNew state on belt %d", belt);
-		
+	{		
 		switch(newSensorReading[belt])
 		{
 			case 0 :
-				printf("\nNo blocks in front of size sensors on belt %d", belt);
 				if(oldSensorReading[belt] == 1)
 					{
-						printf("Small block detected.");
+						smallBlocks++;
 						wdStart(createTimer(), 3 * sysClkRateGet(), (FUNCPTR)closeGates, belt+1);
+						PrintCounters();
 					}
 				break;
 			case 1: 
-				printf("\nBlock in front of first size belt on belt %d", belt);
-				break;
-			case 2:
-				printf("\nBlock in front of second size belt on belt %d", belt);
-				break;
-			case 3:
-				printf("\nBlock(s) in front of both size sensors on belt %d", belt);
+				totalBlocks++;
+				PrintCounters();
 				break;
 		}
 		
@@ -76,13 +75,9 @@ void ReadSensor(unsigned char belt)
 	}
 }
 
-
 void run(void)
 {
 	startMotor();
-	
-	/* Set up timer to close gates */
-	closeGatesTimerID = wdCreate();
 	
 	/* Set up timer to open gates */
 	openGatesTimerID = wdCreate();
