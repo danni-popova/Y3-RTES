@@ -1,3 +1,5 @@
+/* Author: Yordanka Popova up782716@myport.ac.uk */
+
 #include "vxWorks.h"
 #include "taskLib.h"
 #include "stdlib.h"
@@ -31,9 +33,9 @@ void openGates(void)
 	setGates(0);
 }
 
-void closeGates(void)
+void closeGates(char belt)
 {
-	setGates(3);
+	setGates(belt);
 	wdStart(openGatesTimerID, 2 * sysClkRateGet(), (FUNCPTR)openGates, 0);
 }
 
@@ -56,7 +58,7 @@ void ReadSensor(unsigned char belt)
 				if(oldSensorReading[belt] == 1)
 					{
 						printf("Small block detected.");
-						wdStart(createTimer(), 3 * sysClkRateGet(), (FUNCPTR)closeGates, 0);
+						wdStart(createTimer(), 3 * sysClkRateGet(), (FUNCPTR)closeGates, belt+1);
 					}
 				break;
 			case 1: 
@@ -94,4 +96,3 @@ void run(void)
 		ReadSensor(RIGHT);
 	}
 }
-
