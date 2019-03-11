@@ -26,8 +26,6 @@ WDOG_ID timer_T3_ID;
 WDOG_ID timer_T4_ID;
 WDOG_ID timer_T5_ID;
 WDOG_ID timer_T6_ID;
-MSG_Q_ID queueMotorC0ID;
-MSG_Q_ID queueMotorC1ID;
 MSG_Q_ID queueSensorC0ID;
 MSG_Q_ID queueSensorC1ID;
 SEM_ID MotorStateSemID;
@@ -666,3 +664,4 @@ int main(void){
 /* timers not signalling properly to gates */
 /* consider priorities */
 /* reads first block but gates dont work on any subsequent blocks */
+/* Create seperate semaphores for blocktimepointers to avoid timing collision? */
