@@ -106,47 +106,9 @@ void CheckEndSensor(void){
   }
 }
 
-void openGates(char belt){
-    char NextState;
-    if (belt == 1){
-      switch (GateState){
-        case 0 : NextState = 0;
-                 setGates(0);
-                 break;
-        case 1 : NextState = 1;
-                 setGates(1);
-                 break;
-        case 2 : NextState = 0;
-                 setGates(0);
-                 break;
-        case 3 : NextState = 1;
-                 setGates(1);
-                 break;
-        default : NextState = 0;
-                  setGates(0);
-                  break;
-        }
-    }
-    else if (belt == 0){
-      switch (GateState){
-        case 0 : NextState = 0;
-                 setGates(0);
-                 break;
-        case 1 : NextState = 0;
-                 setGates(0);
-                 break;
-        case 2 : NextState = 2;
-                 setGates(2);
-                 break;
-        case 3 : NextState = 2;
-                 setGates(2);
-                 break;
-        default : NextState = 0;
-                  setGates(0);
-                  break;
-      }
-    }
-  GateState = NextState;
+void openGates(){
+  setGates(0);
+  GateState = 0;
 }
 
 void closeGates(char belt){
@@ -190,7 +152,7 @@ void closeGates(char belt){
       }
     }
     GateState = NextState;
-    wdStart(createTimer(), 2 * sysClkRateGet(), (FUNCPTR)openGates, belt);
+    wdStart(createTimer(), 2 * sysClkRateGet(), (FUNCPTR)openGates, 0);
     semGive(CountSensorSemID);
 }
 
