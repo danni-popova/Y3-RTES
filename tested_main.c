@@ -13,7 +13,7 @@ SEM_ID CountSemID;
 SEM_ID EndCountSemID;
 SEM_ID CountSensorSemID;
 
-WDOG_ID createTimer(void){} /* Create a new timer for gate operation */
+WDOG_ID createTimer(void){ /* Create a new timer for gate operation */
 	WDOG_ID operateGateTimer;
 	operateGateTimer = wdCreate();
 	return operateGateTimer;
