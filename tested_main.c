@@ -8,22 +8,16 @@
 #include "wdLib.h"
 #include "time.h"
 
-char GateState;
-char SmallCount0;
-char SmallCount1;
-char LargeCount0;
-char LargeCount1;
-char LargeCountSensor0;
-char LargeCountSensor1;
+char GateState, SmallCount0, SmallCount1, LargeCount0, LargeCount1, LargeCountSensor0, LargeCountSensor1;
 SEM_ID CountSemID;
 SEM_ID EndCountSemID;
 SEM_ID CountSensorSemID;
 
-WDOG_ID createTimer(void) /* Create a new timer for gate operation */
-{
+WDOG_ID createTimer(void){} /* Create a new timer for gate operation */
 	WDOG_ID operateGateTimer;
 	operateGateTimer = wdCreate();
 	return operateGateTimer;
+}
 
 void Interface(void){
   char c;
@@ -112,11 +106,10 @@ void CheckEndSensor(void){
   }
 }
 
-void openGates(belt){
-    char CheckGateState = GateState;
+void openGates(char belt){
     char NextState;
     if (belt == 1){
-      switch (CheckGateState){
+      switch (GateState){
         case 0 : NextState = 0;
                  setGates(0);
                  break;
@@ -135,7 +128,7 @@ void openGates(belt){
         }
     }
     else if (belt == 0){
-      switch (CheckGateState){
+      switch (GateState){
         case 0 : NextState = 0;
                  setGates(0);
                  break;
@@ -153,15 +146,13 @@ void openGates(belt){
                   break;
       }
     }
-  printf("Motor 0 state is %d \n", NextState);
   GateState = NextState;
 }
 
-void closeGates(belt){
-    char CheckGateState = GateState;
+void closeGates(char belt){
     char NextState;
     if (belt == 1){
-      switch (CheckGateState){
+      switch (GateState){
         case 0 : NextState = 2;
                  setGates(2);
                  break;
@@ -180,7 +171,7 @@ void closeGates(belt){
       }
     }
     else if (belt == 0){
-      switch (CheckGateState){
+      switch (GateState){
         case 0 : NextState = 1;
                  setGates(1);
                  break;
@@ -198,7 +189,6 @@ void closeGates(belt){
                   break;
       }
     }
-    printf("Motor 1 state is %d \n", NextState);
     GateState = NextState;
     wdStart(createTimer(), 2 * sysClkRateGet(), (FUNCPTR)openGates, belt);
     semGive(CountSensorSemID);
