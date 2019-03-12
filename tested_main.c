@@ -20,6 +20,11 @@ SEM_ID CountSemID;
 SEM_ID EndCountSemID;
 SEM_ID CountSensorSemID;
 
+WDOG_ID createTimer(void) /* Create a new timer for gate operation */
+{
+	WDOG_ID operateGateTimer;
+	operateGateTimer = wdCreate();
+	return operateGateTimer;
 
 void Interface(void){
   char c;
@@ -153,7 +158,6 @@ void openGates(belt){
   printf("Motor 0 state is %d \n", NextState);
   GateState = NextState;
   semGive(MotorStateSemID);
-  }
 }
 
 void closeGates(belt){
@@ -201,17 +205,8 @@ void closeGates(belt){
     printf("Motor 1 state is %d \n", NextState);
     GateState = NextState;
     semGive(MotorStateSemID);
-    wdStart(createTimer, 2 * sysClkRateGet(), (FUNCPTR)openGates, belt);
+    wdStart(createTimer(), 2 * sysClkRateGet(), (FUNCPTR)openGates, belt);
     semGive(CountSensorSemID);
-  }
-}
-}
-
-WDOG_ID createTimer(void) /* Create a new timer for gate operation */
-{
-	WDOG_ID operateGateTimer;
-	operateGateTimer = wdCreate();
-	return operateGateTimer;
 }
 
 void Analyse(CurrentState, LastState, belt){
@@ -252,7 +247,7 @@ void CheckSensor(){
   char LastState0 = 0;
   char CurrentState1 = 0;
   char LastState1 = 0;
-  belt = 0;
+  char belt = 0;
   while(1){
     belt = 0;
     resetSizeSensors(0);
@@ -274,8 +269,7 @@ int main(void){
   startMotor();
   int CheckSensor_id;
   int Interface_id;
-  int CheckEndSensor0_id;
-  int CheckEndSensor1_id;
+  int CheckEndSensor_id;
 
   MotorStateSemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
   if (MotorStateSemID == NULL){
@@ -302,27 +296,11 @@ int main(void){
   CheckSensor_id = taskSpawn("CheckSensor", 95, 0, 20000,
                       (FUNCPTR)CheckSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
-  CheckEndSensor0_id = taskSpawn("CheckEndSensor0", 96, 0, 20000,
-                      (FUNCPTR)CheckEndSensor0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
-  CheckEndSensor1_id = taskSpawn("CheckEndSensor1", 96, 0, 20000,
-                      (FUNCPTR)CheckEndSensor1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+  CheckEndSensor_id = taskSpawn("CheckEndSensor", 96, 0, 20000,
+                      (FUNCPTR)CheckEndSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
   Interface_id = taskSpawn("Interface", 97, 0, 20000,
                       (FUNCPTR)Interface, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
   /*printf("Welcome to block conveyor 4.0! \n" "Press: \n" q to quit \n l to show number of large blocks counted \n s to show number of small blocks detected \n o to show number of small blocks counted \n p to show number of small blocks detected \n k to reset the large block counter \n a to reset the small block counter \n z to show number of large blocks detected on conveyor 0 \n x to show number of large blocks detected on conveyor 1 \n h to see this message again \n ");*/
 }
-
-/* Motor control 1 UP timer does not execute - why? Check timers */
-/* Blocktimepointer1 does not reset */
-/* open gate timer executed too many times */
-/* Count sensor no longer sensing */
-/* timers not signalling properly to gates */
-/* consider priorities */
-/* reads first block but gates dont work on any subsequent blocks */
-/* Create seperate semaphores for blocktimepointers to avoid timing collision? */
-
-/* Create timers individually in a smarter way */
-/* open gate timer set after close gate timer executes */
-/* Remove blockpointer */
