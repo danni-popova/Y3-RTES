@@ -15,7 +15,6 @@ char LargeCount0;
 char LargeCount1;
 char LargeCountSensor0;
 char LargeCountSensor1;
-SEM_ID MotorStateSemID;
 SEM_ID CountSemID;
 SEM_ID EndCountSemID;
 SEM_ID CountSensorSemID;
@@ -114,7 +113,6 @@ void CheckEndSensor(void){
 }
 
 void openGates(belt){
-    semTake(MotorStateSemID, WAIT_FOREVER);
     char CheckGateState = GateState;
     char NextState;
     if (belt == 1){
@@ -157,11 +155,9 @@ void openGates(belt){
     }
   printf("Motor 0 state is %d \n", NextState);
   GateState = NextState;
-  semGive(MotorStateSemID);
 }
 
 void closeGates(belt){
-    semTake(MotorStateSemID, WAIT_FOREVER);
     char CheckGateState = GateState;
     char NextState;
     if (belt == 1){
@@ -204,7 +200,6 @@ void closeGates(belt){
     }
     printf("Motor 1 state is %d \n", NextState);
     GateState = NextState;
-    semGive(MotorStateSemID);
     wdStart(createTimer(), 2 * sysClkRateGet(), (FUNCPTR)openGates, belt);
     semGive(CountSensorSemID);
 }
@@ -261,7 +256,7 @@ void CheckSensor(){
     Analyse(CurrentState1, LastState1, belt);
     LastState1 = CurrentState1;
 
-    /* taskDelay(0.25 * sysClkRateGet()); */
+    taskDelay(0.05 * sysClkRateGet());
   }
 }
 
@@ -271,11 +266,6 @@ int main(void){
   int Interface_id;
   int CheckEndSensor_id;
 
-  MotorStateSemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
-  if (MotorStateSemID == NULL){
-    printf("Cannot create analysis semaphore! Terminating...");
-    exit(0);
-  }
   CountSemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
   if (CountSemID == NULL){
     printf("Cannot create analysis semaphore! Terminating...");
