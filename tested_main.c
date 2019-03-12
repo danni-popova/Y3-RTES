@@ -12,6 +12,7 @@ char GateState, SmallCount0, SmallCount1, LargeCount0, LargeCount1, LargeCountSe
 SEM_ID CountSemID;
 SEM_ID EndCountSemID;
 SEM_ID CountSensorSemID;
+WDOG_ID openGatesTimerID;
 
 WDOG_ID createTimer(void){ /* Create a new timer for gate operation */
 	WDOG_ID operateGateTimer;
@@ -152,7 +153,7 @@ void closeGates(char belt){
       }
     }
     GateState = NextState;
-    wdStart(createTimer(), 2 * sysClkRateGet(), (FUNCPTR)openGates, 0);
+    wdStart(openGatesTimerID, 2 * sysClkRateGet(), (FUNCPTR)openGates, 0);
     semGive(CountSensorSemID);
 }
 
@@ -244,5 +245,10 @@ int main(void){
   Interface_id = taskSpawn("Interface", 97, 0, 20000,
                       (FUNCPTR)Interface, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
+  /* Start open gates timer */
+  openGatesTimerID = wdCreate();
+
   /*printf("Welcome to block conveyor 4.0! \n" "Press: \n" q to quit \n l to show number of large blocks counted \n s to show number of small blocks detected \n o to show number of small blocks counted \n p to show number of small blocks detected \n k to reset the large block counter \n a to reset the small block counter \n z to show number of large blocks detected on conveyor 0 \n x to show number of large blocks detected on conveyor 1 \n h to see this message again \n ");*/
 }
+
+/* Open gate logic means if two blocks pass on both conveyors simultaneously the gates will keep one closed unecessarily */
