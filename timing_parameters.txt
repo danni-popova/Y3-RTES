@@ -1,0 +1,220 @@
+********* Real-Time Embedded Systems PBL **********
+*** Conveyor timing measurement and calibration ***
+***************************************************
+
+Place a block on a belt ...
+Timing summary data are printed once the block clears the count sensor.
+
+Press ENTER, when finished calibrating.
+
+
+Conveyor 0--> Clock: 85531  Sensor0 -- ON
+Conveyor 0--> Clock: 85533  Sensor0 -- ON
+Conveyor 0--> Clock: 85619  Sensor0 -- OFF
+Conveyor 0--> Clock: 85621  Sensor0 -- OFF
+Conveyor 0--> Clock: 85691  Sensor1 -- ON
+Conveyor 0--> Clock: 85693  Sensor1 -- ON
+Conveyor 0--> Clock: 85788  Sensor1 -- OFF
+Conveyor 0--> Clock: 85794  Sensor1 -- OFF
+Conveyor 0--> Clock: 86638  Sensor2 -- ON
+Conveyor 0--> Clock: 86640  Sensor2 -- ON
+Conveyor 0--> Clock: 86728  Sensor2 -- OFF
+
+Timing summary:
+Conveyor 0--> T(detect) = small block
+Conveyor 0--> T(gate) = 2.990526 sec
+Conveyor 0--> T(count) = 0.440000 sec
+Conveyor 0--> T(s23) = 4.735000 sec
+
+
+Conveyor 0--> Clock: 86734  Sensor2 -- OFF
+
+Timing summary:
+Conveyor 0--> T(detect) = small block
+Conveyor 0--> T(gate) = 2.990526 sec
+Conveyor 0--> T(count) = 0.480000 sec
+Conveyor 0--> T(s23) = 4.735000 sec
+
+
+Conveyor 1--> Clock: 88409  Sensor0 -- ON
+Conveyor 1--> Clock: 88411  Sensor0 -- ON
+Conveyor 1--> Clock: 88584  Sensor1 -- ON
+Conveyor 1--> Clock: 88586  Sensor1 -- ON
+Conveyor 1--> Clock: 88650  Sensor0 -- OFF
+Conveyor 1--> Clock: 88656  Sensor0 -- OFF
+Conveyor 1--> Clock: 88823  Sensor1 -- OFF
+Conveyor 1--> Clock: 88825  Sensor1 -- OFF
+Conveyor 1--> Clock: 89548  Sensor2 -- ON
+Conveyor 1--> Clock: 89550  Sensor2 -- ON
+Conveyor 1--> Clock: 89755  Sensor2 -- OFF
+
+Timing summary:
+Conveyor 1--> T(detect) = 0.360000 sec
+Conveyor 1--> T(gate) = 3.044211 sec
+Conveyor 1--> T(count) = 1.035000 sec
+Conveyor 1--> T(s23) = 4.820000 sec
+
+
+Conveyor 1--> Clock: 89757  Sensor2 -- OFF
+
+Timing summary:
+Conveyor 1--> T(detect) = 0.320000 sec
+Conveyor 1--> T(gate) = 3.044211 sec
+Conveyor 1--> T(count) = 1.035000 sec
+Conveyor 1--> T(s23) = 4.820000 sec
+
+
+Conveyor 0--> Clock: 91390  Sensor0 -- ON
+Conveyor 0--> Clock: 91392  Sensor0 -- ON
+Conveyor 0--> Clock: 91494  Sensor0 -- OFF
+Conveyor 0--> Clock: 91496  Sensor0 -- OFF
+Conveyor 0--> Clock: 91566  Sensor1 -- ON
+Conveyor 0--> Clock: 91568  Sensor1 -- ON
+Conveyor 0--> Clock: 91669  Sensor1 -- OFF
+Conveyor 0--> Clock: 91671  Sensor1 -- OFF
+Conveyor 0--> Clock: 92513  Sensor2 -- ON
+Conveyor 0--> Clock: 92515  Sensor2 -- ON
+Conveyor 0--> Clock: 92610  Sensor2 -- OFF
+
+Timing summary:
+Conveyor 0--> T(detect) = small block
+Conveyor 0--> T(gate) = 2.990526 sec
+Conveyor 0--> T(count) = 0.475000 sec
+Conveyor 0--> T(s23) = 4.735000 sec
+
+
+Conveyor 0--> Clock: 92617  Sensor2 -- OFF
+
+Timing summary:
+Conveyor 0--> T(detect) = small block
+Conveyor 0--> T(gate) = 2.990526 sec
+Conveyor 0--> T(count) = 0.520000 sec
+Conveyor 0--> T(s23) = 4.735000 sec
+
+
+Calibration finished.
+
+
+********* Real-Time Embedded Systems PBL **********
+*** Conveyor timing measurement and calibration ***
+***************************************************
+
+Place a block on a belt ...
+Timing summary data are printed once the block clears the count sensor.
+
+Press ENTER, when finished calibrating.
+
+
+Conveyor 0--> Clock: 114769  Sensor0 -- ON
+Conveyor 0--> Clock: 114773  Sensor0 -- ON
+Conveyor 0--> Clock: 114877  Sensor0 -- OFF
+Conveyor 0--> Clock: 114881  Sensor0 -- OFF
+Conveyor 0--> Clock: 114944  Sensor1 -- ON
+Conveyor 0--> Clock: 114948  Sensor1 -- ON
+Conveyor 0--> Clock: 115052  Sensor1 -- OFF
+Conveyor 0--> Clock: 115056  Sensor1 -- OFF
+Conveyor 0--> Clock: 115884  Sensor2 -- ON
+Conveyor 0--> Clock: 115888  Sensor2 -- ON
+Conveyor 0--> Clock: 115983  Sensor2 -- OFF
+
+Timing summary:
+Conveyor 0--> T(detect) = small block
+Conveyor 0--> T(gate) = 2.968421 sec
+Conveyor 0--> T(count) = 0.475000 sec
+Conveyor 0--> T(s23) = 4.700000 sec
+
+
+Conveyor 0--> Clock: 115987  Sensor2 -- OFF
+
+Timing summary:
+Conveyor 0--> T(detect) = small block
+Conveyor 0--> T(gate) = 2.968421 sec
+Conveyor 0--> T(count) = 0.515000 sec
+Conveyor 0--> T(s23) = 4.700000 sec
+
+
+Conveyor 1--> Clock: 117028  Sensor0 -- ON
+Conveyor 1--> Clock: 117032  Sensor0 -- ON
+Conveyor 1--> Clock: 117136  Sensor0 -- OFF
+Conveyor 1--> Clock: 117140  Sensor0 -- OFF
+Conveyor 1--> Clock: 117199  Sensor1 -- ON
+Conveyor 1--> Clock: 117203  Sensor1 -- ON
+Conveyor 1--> Clock: 117299  Sensor1 -- OFF
+Conveyor 1--> Clock: 117303  Sensor1 -- OFF
+Conveyor 1--> Clock: 118151  Sensor2 -- ON
+Conveyor 1--> Clock: 118155  Sensor2 -- ON
+Conveyor 1--> Clock: 118242  Sensor2 -- OFF
+
+Timing summary:
+Conveyor 1--> T(detect) = small block
+Conveyor 1--> T(gate) = 3.018947 sec
+Conveyor 1--> T(count) = 0.435000 sec
+Conveyor 1--> T(s23) = 4.780000 sec
+
+
+Conveyor 1--> Clock: 118246  Sensor2 -- OFF
+
+Timing summary:
+Conveyor 1--> T(detect) = small block
+Conveyor 1--> T(gate) = 2.993684 sec
+Conveyor 1--> T(count) = 0.475000 sec
+Conveyor 1--> T(s23) = 4.740000 sec
+
+
+Conveyor 0--> Clock: 118917  Sensor0 -- ON
+Conveyor 0--> Clock: 118921  Sensor0 -- ON
+Conveyor 0--> Clock: 119084  Sensor1 -- ON
+Conveyor 0--> Clock: 119088  Sensor1 -- ON
+Conveyor 0--> Clock: 119164  Sensor0 -- OFF
+Conveyor 0--> Clock: 119168  Sensor0 -- OFF
+Conveyor 0--> Clock: 119331  Sensor1 -- OFF
+Conveyor 0--> Clock: 119335  Sensor1 -- OFF
+Conveyor 0--> Clock: 120036  Sensor2 -- ON
+Conveyor 0--> Clock: 120040  Sensor2 -- ON
+Conveyor 0--> Clock: 120266  Sensor2 -- OFF
+
+Timing summary:
+Conveyor 0--> T(detect) = 0.400000 sec
+Conveyor 0--> T(gate) = 2.993684 sec
+Conveyor 0--> T(count) = 1.150000 sec
+Conveyor 0--> T(s23) = 4.740000 sec
+
+
+Conveyor 0--> Clock: 120271  Sensor2 -- OFF
+
+Timing summary:
+Conveyor 0--> T(detect) = 0.400000 sec
+Conveyor 0--> T(gate) = 3.018947 sec
+Conveyor 0--> T(count) = 1.155000 sec
+Conveyor 0--> T(s23) = 4.780000 sec
+
+
+Conveyor 1--> Clock: 121148  Sensor0 -- ON
+Conveyor 1--> Clock: 121152  Sensor0 -- ON
+Conveyor 1--> Clock: 121320  Sensor1 -- ON
+Conveyor 1--> Clock: 121324  Sensor1 -- ON
+Conveyor 1--> Clock: 121336  Sensor0 -- OFF
+Conveyor 1--> Clock: 121340  Sensor0 -- OFF
+Conveyor 1--> Clock: 121463  Sensor1 -- OFF
+Conveyor 1--> Clock: 121467  Sensor1 -- OFF
+Conveyor 1--> Clock: 122279  Sensor2 -- ON
+Conveyor 1--> Clock: 122283  Sensor2 -- ON
+Conveyor 1--> Clock: 122346  Sensor2 -- OFF
+
+Timing summary:
+Conveyor 1--> T(detect) = 0.080000 sec
+Conveyor 1--> T(gate) = 3.041053 sec
+Conveyor 1--> T(count) = 0.315000 sec
+Conveyor 1--> T(s23) = 4.815000 sec
+
+
+Conveyor 1--> Clock: 122351  Sensor2 -- OFF
+
+Timing summary:
+Conveyor 1--> T(detect) = 0.080000 sec
+Conveyor 1--> T(gate) = 3.015789 sec
+Conveyor 1--> T(count) = 0.360000 sec
+Conveyor 1--> T(s23) = 4.775000 sec
+
+
+Calibration finished.
