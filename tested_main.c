@@ -8,229 +8,139 @@
 #include "wdLib.h"
 #include "time.h"
 
-char BlockTimePointer0;
-char BlockTimePointer1;
-
-char GateState;
-char SmallCount0;
-char SmallCount1;
-char LargeCount0;
-char LargeCount1;
-char LargeCountSensor0;
-char LargeCountSensor1;
-char updownFlag0;
-char updownFlag1;
-WDOG_ID timer_T1_ID;
-WDOG_ID timer_T2_ID;
-WDOG_ID timer_T3_ID;
-WDOG_ID timer_T4_ID;
-WDOG_ID timer_T5_ID;
-WDOG_ID timer_T6_ID;
-MSG_Q_ID queueMotorC0ID;
-MSG_Q_ID queueMotorC1ID;
-MSG_Q_ID queueSensorC0ID;
-MSG_Q_ID queueSensorC1ID;
-SEM_ID MotorStateSemID;
+int CheckSensor_id, Interface_id /*CheckEndSensor_id*/;
+char GateState, MissCount;
+char SmallCount[2] = {0, 0};
+char LargeCount[2] = {0, 0};
+char LargeCountSensor[2] = {0, 0};
+char onBelt[2] = {0, 0};
 SEM_ID CountSemID;
 SEM_ID EndCountSemID;
-SEM_ID BlockTimeSemID;
-SEM_ID Timer0SemID;
-SEM_ID Timer1SemID;
-SEM_ID CountSensor0SemID;
-SEM_ID CountSensor1SemID;
+SEM_ID CountSensorSemID;
+WDOG_ID openGatesTimerID;
 
+WDOG_ID createTimer(void){ /* Create a new timer for close gate operation */
+	WDOG_ID operateGateTimer;
+	operateGateTimer = wdCreate();
+	return operateGateTimer;
+}
+
+WDOG_ID createCountTimer(void){ /* Create a new timer for close gate operation */
+	WDOG_ID operateCountTimer;
+	operateCountTimer = wdCreate();
+	return operateCountTimer;
+}
 
 void Interface(void){
   char c;
   while(1){
     c = getchar();
     switch(c){
-      /* case 'q':
+       case 'q':
                 printf("Shutting down... \n");
                 taskDelete(CheckSensor_id);
-                taskDelete(MotorController0_id);
-                taskDelete(MotorController1_id);
+                /*taskDelete(CheckEndSensor_id);*/
+                stopMotor();
                 printf("Goodbye! \n");
-                taskDelete(Interface_id); */
+                taskDelete(Interface_id);
       case 'l':
-                printf("Total Large blocks counted: %d \n", LargeCount0);
+    	  	  	if (MissCount > 0){
+    	  	  		printf("Large block has been missed! \n");
+    	  	  	}
+                printf("Total Large blocks COUNTED on Conveyor 0 : %d \n", LargeCount[0]);
                 break;
       case 's':
-                printf("Total Small blocks detected: %d \n", SmallCount0);
+                printf("Total Small blocks DETECTED on Conveyor 0 : %d \n", SmallCount[0]);
                 break;
       case 'o':
-                printf("Total Large blocks counted: %d \n", LargeCount1);
+    	  	    if (MissCount > 0){
+    	  	    	printf("Large block has been missed! \n");
+    	      	}
+                printf("Total Large blocks COUNTED on Conveyor 1 : %d \n", LargeCount[1]);
                 break;
       case 'p':
-                printf("Total Small blocks detected: %d \n", SmallCount1);
+                printf("Total Small blocks DETECTED on Conveyor 1 : %d \n", SmallCount[1]);
                 break;
       case 'k':
-                semTake(EndCountSemID, WAIT_FOREVER);
-                printf("Reset Large block count value to 0 \n");
-                LargeCount0 = 0;
-                LargeCount1 = 0;
-                LargeCountSensor0 = 0;
-                LargeCountSensor1 = 0;
+                semTake(CountSemID, WAIT_FOREVER);
+                printf("Reset Large block count/detected value to 0 \n");
+                LargeCount[0] = 0;
+                LargeCount[1] = 0;
                 semGive(CountSemID);
+                semTake(EndCountSemID, WAIT_FOREVER);
+                LargeCountSensor[0] = 0;
+                LargeCountSensor[1] = 0;
+                MissCount = 0;
+                semGive(EndCountSemID);
                 break;
       case 'a':
                 semTake(CountSemID, WAIT_FOREVER);
                 printf("Reset Small block detected value to 0 \n");
-                SmallCount0 = 0;
-                SmallCount1 = 0;
+                SmallCount[0] = 0;
+                SmallCount[1] = 0;
                 semGive(CountSemID);
                 break;
       case 'z':
-                printf("Large block count for conveyor 0: %d \n", LargeCountSensor0);
+                printf("Large block DETECTED for conveyor 0: %d \n", LargeCountSensor[0]);
                 break;
       case 'x':
-                printf("Large block count for conveyor 1: %d \n", LargeCountSensor1);
+                printf("Large block DETECTED for conveyor 1: %d \n", LargeCountSensor[1]);
                 break;
-/*      case 'h': printf("Welcome to block conveyor 4.0! \n
-                Press: \n
-                q to quit \n
-                l to show number of large blocks counted \n
-                s to show number of small blocks detected \n
-                o to show number of small blocks counted \n
-                p to show number of small blocks detected \n
-                k to reset the large block counter \n
-                a to reset the small block counter \n
-                z to show number of large blocks detected on conveyor 0 \n
-                x to show number of large blocks detected on conveyor 1 \n
-                h to see this message again \n");
-              break; */
+      case 'h': printf("Welcome to block conveyor 4.0! \n"
+    		  "Press: \n" "q to quit \n" "l to show number of large blocks counted \n"
+    		  "s to show number of small blocks detected \n"
+    		  "o to show number of large blocks counted \n"
+    		  "p to show number of small blocks detected \n"
+    		  "k to reset the large block counter \n" "a to reset the small block counter \n"
+    		  "z to show number of large blocks detected on conveyor 0 \n"
+    		  "x to show number of large blocks detected on conveyor 1 \n"
+    		  "h to see this message again \n ");
       default: break;
     }
 
   }
 }
 
-void TimerT1Callback(void){ /* Close Gate 0 */
-  updownFlag0 = 0;
-  semGive(Timer0SemID);
-}
-void TimerT2Callback(void){ /* Close Gate 1 */
-  updownFlag1 = 0;
-  semGive(Timer1SemID);
-}
-void TimerT3Callback(void){ /* Open Gate 0 */
-  updownFlag0 = 1;
-  semGive(Timer0SemID);
-}
-void TimerT4Callback(void){ /* Open Gate 1 */
-  updownFlag1 = 1;
-  semGive(Timer1SemID);
-}
-void TimerT5Callback(void){ /* Close Gate 0 */
-  updownFlag0 = 0;
-  semGive(Timer0SemID);
-}
-void TimerT6Callback(void){ /* Close Gate 1 */
-  updownFlag1 = 0;
-  semGive(Timer1SemID);
+ void CheckEndSensor(char belt){
+    resetCountSensor(belt);
+    char Count = readCountSensor(belt);
+    if (belt == 0){
+    	if (Count == 1){
+    		semTake(EndCountSemID, WAIT_FOREVER);
+        	LargeCountSensor[belt] ++;
+        	semGive(EndCountSemID);
+    	}
+    	else{
+    		semTake(EndCountSemID, WAIT_FOREVER);
+    		MissCount ++;
+    		semGive(EndCountSemID);
+    	}
+    }
+    else if (belt == 1){
+    	if (Count == 1){
+    		semTake(EndCountSemID, WAIT_FOREVER);
+    		LargeCountSensor[belt] ++;
+    		semGive(EndCountSemID);
+    	}
+    	else{
+    		semTake(EndCountSemID, WAIT_FOREVER);
+    		MissCount ++;
+    		semGive(EndCountSemID);
+    	}
+    }
 }
 
-void CheckEndSensor0(void){
-  while(1){
-    semTake(CountSensor0SemID, WAIT_FOREVER);
-    taskDelay(1 * sysClkRateGet());
-    resetCountSensor(0);
-    printf("Reading count 0 sensor...\n");
-    char Count = readCountSensor(0);
-    if (Count == 1){
-      semTake(EndCountSemID, WAIT_FOREVER);
-      LargeCountSensor0 ++;
-      semGive(EndCountSemID);
-    }
-  }
-}
-void CheckEndSensor1(void){
-  while(1){
-    semTake(CountSensor1SemID, WAIT_FOREVER);
-    taskDelay(1 * sysClkRateGet());
-    resetCountSensor(1);
-    printf("Reading count 1 sensor...\n");
-    char Count = readCountSensor(1);
-    if (Count == 1){
-      semTake(EndCountSemID, WAIT_FOREVER);
-      LargeCountSensor1 ++;
-      semGive(EndCountSemID);
-    }
-  }
+void openGates(char belt){
+	setGates(0);
+	GateState = 0;
+	onBelt[belt] = 0;
 }
 
-void MotorController0(void){
-  char DOWN = 0;
-  char UP = 1;
-  while(1){
-    semTake(Timer0SemID, WAIT_FOREVER);
-    printf("Got MotorControl 0 semaphore! \n");
-    semTake(MotorStateSemID, WAIT_FOREVER);
-    char CheckGateState = GateState;
+void closeGates(char belt){
     char NextState;
-    if (updownFlag0 == DOWN){
-      switch (CheckGateState){
-        case 0 : NextState = 1;
-                 setGates(1);
-                 break;
-        case 1 : NextState = 1;
-                 setGates(1);
-                 break;
-        case 2 : NextState = 3;
-                 setGates(3);
-                 break;
-        case 3 : NextState = 3;
-                 setGates(3);
-                 break;
-        default : NextState = 0;
-                  setGates(0);
-                  break;
-      }
-    }
-    else if (updownFlag0 == UP){
-      switch (CheckGateState){
-        case 0 : NextState = 0;
-                 setGates(0);
-                 break;
-        case 1 : NextState = 0;
-                 setGates(0);
-                 break;
-        case 2 : NextState = 2;
-                 setGates(2);
-                 break;
-        case 3 : NextState = 2;
-                 setGates(2);
-                 break;
-        default : NextState = 0;
-                  setGates(0);
-                  break;
-      }
-    }
-  printf("Motor 0 state is %d \n", NextState);
-  GateState = NextState;
-  semGive(MotorStateSemID);
-
-  if (BlockTimePointer0 != 0){
-    semTake(BlockTimeSemID, WAIT_FOREVER);
-    BlockTimePointer0 = 0;
-    printf("BlockTimePointer0: %d \n", BlockTimePointer0);
-    semGive(BlockTimeSemID);
-  }
-  semGive(CountSensor0SemID);
-  }
-}
-
-void MotorController1(void){
-  char DOWN = 0;
-  char UP = 1;
-  while(1){
-    semTake(Timer1SemID, WAIT_FOREVER);
-    printf("Got MotorControl 1 semaphore! \n");
-    semTake(MotorStateSemID, WAIT_FOREVER);
-    char CheckGateState = GateState;
-    char NextState;
-    if (updownFlag1 == DOWN){
-      switch (CheckGateState){
+    onBelt[belt] ++;
+    if (belt == 1){
+      switch (GateState){
         case 0 : NextState = 2;
                  setGates(2);
                  break;
@@ -240,360 +150,109 @@ void MotorController1(void){
         case 2 : NextState = 2;
                  setGates(2);
                  break;
-        case 3 : NextState = 3;
-                 setGates(3);
+        case 3 : if (onBelt[0] > 0){
+        		 	 NextState = 3;
+        		 	 setGates(3);
+        		 }
+        	     else{
+        	    	 NextState = 2;
+        	    	 setGates(2);
+        	     }
                  break;
         default : NextState = 0;
                   setGates(0);
                  break;
       }
     }
-    else if (updownFlag1 == UP){
-      switch (CheckGateState){
-        case 0 : NextState = 0;
-                 setGates(0);
+    else if (belt == 0){
+      switch (GateState){
+        case 0 : NextState = 1;
+                 setGates(1);
                  break;
         case 1 : NextState = 1;
                  setGates(1);
                  break;
-        case 2 : NextState = 0;
-                 setGates(0);
+        case 2 : NextState = 3;
+                 setGates(3);
                  break;
-        case 3 : NextState = 1;
-                 setGates(1);
+        case 3 : if (onBelt[1] > 0){
+        		 	 NextState = 3;
+        		 	 setGates(3);
+        		 }
+        		 else{
+        			 NextState = 1;
+        			 setGates(1);
+        		 }
                  break;
         default : NextState = 0;
                   setGates(0);
                   break;
+      }
     }
-    printf("Motor 1 state is %d \n", NextState);
     GateState = NextState;
-    semGive(MotorStateSemID);
-
-    if (BlockTimePointer1 != 0){
-      semTake(BlockTimeSemID, WAIT_FOREVER);
-      BlockTimePointer1 = 0;
-      printf("BlockTimePointer1: %d \n", BlockTimePointer1);
-      semGive(BlockTimeSemID);
-    }
-    semGive(CountSensor1SemID);
-  }
-}
+    wdStart(openGatesTimerID, 1.5 * sysClkRateGet(), (FUNCPTR)openGates, belt);
 }
 
-void setupTimer1(){
-  int res;
-  timer_T1_ID = wdCreate();
-  if (timer_T1_ID == NULL) {
-    printf("Cannot create timer!!! Terminating this task...");
-    exit(0);
-  }
-  res = wdStart(timer_T1_ID, 2 * sysClkRateGet(), (FUNCPTR)TimerT1Callback, 0);
-  if (res == ERROR){
-    printf("Cannot start the timer! Terminating... \n");
-    exit(0);
-  }
-}
-
-void setupTimer2(){
-  int res;
-  timer_T2_ID = wdCreate();
-  if (timer_T2_ID == NULL) {
-    printf("Cannot create timer!!! Terminating this task...");
-    exit(0);
-  }
-  res = wdStart(timer_T2_ID, 2 * sysClkRateGet(), (FUNCPTR)TimerT2Callback, 0);
-  if (res == ERROR){
-    printf("Cannot start the timer! Terminating... \n");
-    exit(0);
-  }
-}
-
-void setupTimer3(){
-  int res;
-  timer_T3_ID = wdCreate();
-  if (timer_T3_ID == NULL) {
-    printf("Cannot create timer!!! Terminating this task...");
-    exit(0);
-  }
-  res = wdStart(timer_T3_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT3Callback, 0);
-  if (res == ERROR){
-    printf("Cannot start the timer! Terminating... \n");
-    exit(0);
-  }
-}
-
-void setupTimer4(){
-  int res;
-  timer_T4_ID = wdCreate();
-  if (timer_T4_ID == NULL) {
-    printf("Cannot create timer!!! Terminating this task...");
-    exit(0);
-  }
-  res = wdStart(timer_T4_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT4Callback, 0);
-  if (res == ERROR){
-    printf("Cannot start the timer! Terminating... \n");
-    exit(0);
-  }
-}
-
-void setupTimer5(){
-  int res;
-  timer_T5_ID = wdCreate();
-  if (timer_T5_ID == NULL) {
-    printf("Cannot create timer!!! Terminating this task...");
-    exit(0);
-  }
-  res = wdStart(timer_T5_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT5Callback, 0);
-  if (res == ERROR){
-    printf("Cannot start the timer! Terminating... \n");
-    exit(0);
-  }
-}
-
-void setupTimer6(){
-  int res;
-  timer_T6_ID = wdCreate();
-  if (timer_T6_ID == NULL) {
-    printf("Cannot create timer!!! Terminating this task...");
-    exit(0);
-  }
-  res = wdStart(timer_T6_ID, 3 * sysClkRateGet(), (FUNCPTR)TimerT6Callback, 0);
-  if (res == ERROR){
-    printf("Cannot start the timer! Terminating... \n");
-    exit(0);
-  }
-}
-
-void AnalyseConveyor0(){
-  char CurrentState;
-  int res;
-  while(1){
-    res = msgQReceive(queueSensorC0ID, &CurrentState, 1, WAIT_FOREVER);
-    if (res == ERROR){
-      printf("Error reading sensor 0 message queue! Terminating...");
-      exit(0);
-    }
-    printf("Detected on Conveyor 0! \n");
+void Analyse(CurrentState, LastState, belt){
+  if (CurrentState != LastState){ /* New reading */
     switch(CurrentState){
       case 0 :
-              if (BlockTimePointer0 == 0){
-                printf("Setting close gate timer \n");
-                setupTimer1();
-                printf("Setting open gate timer \n");
-                setupTimer3();
+              if (LastState == 1){ /* First small block on belt*/
+                printf("Close gate timer set for conveyor %d \n", belt);
+                wdStart(createTimer(), 3 * sysClkRateGet(), (FUNCPTR)closeGates, belt);
                 semTake(CountSemID, WAIT_FOREVER);
-                SmallCount0 ++;
+                SmallCount[belt] ++;
                 semGive(CountSemID);
-                semTake(BlockTimeSemID, WAIT_FOREVER);
-                BlockTimePointer0 ++;
-                semGive(BlockTimeSemID);
-                }
-              else{
-                printf("Setting open gate timer \n");
-                setupTimer3();
+              }
+              else if (LastState == 3){  /* Second small block on belt */
+                printf("Second small block detected for conveyor %d! \n", belt);
+                wdStart(createTimer(), 3 * sysClkRateGet(), (FUNCPTR)closeGates, belt);
                 semTake(CountSemID, WAIT_FOREVER);
-                SmallCount0 ++;
+                SmallCount[belt] ++;
                 semGive(CountSemID);
-               }
-               break;
-      case 1 :
-               printf("Second small block detected! \n");
-               printf("Setting open gate timer \n");
-               setupTimer3();
-               semTake(CountSemID, WAIT_FOREVER);
-               SmallCount0 ++;
-               semGive(CountSemID);
-               break;
-      case 2 :
-               if (BlockTimePointer0 > 0){
-                 printf("Setting open gate timer \n");
-                 setupTimer3();
-                 printf("Setting close gate timer \n");
-                 setupTimer5();
-               }
-               setupTimer3();
-               semTake(CountSemID, WAIT_FOREVER);
-               printf("Large block detected! \n");
-               LargeCount0 ++;
-               semGive(CountSemID);
-               break;
+              }
+              break;
+      case 3 :
+              if (LastState == 1){ /* Large block on belt */
+            	wdStart(createCountTimer(), 5 * sysClkRateGet(), (FUNCPTR)CheckEndSensor, belt);
+            	printf("Large block detected on conveyor %d! \n", belt);
+                semTake(CountSemID, WAIT_FOREVER);
+                LargeCount[belt] ++;
+                semGive(CountSemID);
+              }
+              break;
       default :
                break;
     }
   }
 }
 
-void AnalyseConveyor1(){
-  char CurrentState;
-  int res;
+void CheckSensor(){
+  char CurrentState0 = 0;
+  char LastState0 = 0;
+  char CurrentState1 = 0;
+  char LastState1 = 0;
+  char belt = 0;
   while(1){
-    res = msgQReceive(queueSensorC1ID, &CurrentState, 1, WAIT_FOREVER);
-    if (res == ERROR){
-      printf("Error reading sensor 0 message queue! Terminating...");
-      exit(0);
-    }
-  	printf("Detected on Conveyor 1! \n");
-    switch(CurrentState){
-      case 0 :
-              if (BlockTimePointer1 == 0){
-              	printf("Setting close gate timer");
-                setupTimer2();
-                printf("Setting open gate timer \n");
-                setupTimer4();
-                semTake(CountSemID, WAIT_FOREVER);
-                SmallCount1 ++;
-                semGive(CountSemID);
-                semTake(BlockTimeSemID, WAIT_FOREVER);
-                BlockTimePointer1 ++;
-                semGive(BlockTimeSemID);
-              }
-              else{
-                printf("Setting open gate timer \n");
-                setupTimer4();
-                semTake(CountSemID, WAIT_FOREVER);
-                SmallCount1 ++;
-                semGive(CountSemID);
-              }
-              break;
-      case 1 :
-                printf("Second small block detected! \n");
-                printf("Setting open gate timer \n");
-                setupTimer4();
-                semTake(CountSemID, WAIT_FOREVER);
-                SmallCount1 ++;
-                semGive(CountSemID);
-              break;
-      case 2 :
-               if (BlockTimePointer1 > 0){
-                 printf("Setting open gate timer \n");
-                 setupTimer4();
-                 printf("Setting close gate timer \n");
-                 setupTimer6();
-               }
-               setupTimer4();
-               semTake(CountSemID, WAIT_FOREVER);
-               printf("Large block detected! \n");
-               LargeCount1 ++;
-               semGive(CountSemID);
-               break;
-      default :
-               break;
-    }
-  }
-}
-
-void CheckSensor0(){
-  char CurrentState = 0;
-  char LastState = 0;
-  char Statemsg;
-  int res;
-  while(1){
+    belt = 0;
     resetSizeSensors(0);
-    CurrentState = readSizeSensors(0);
-    if (CurrentState != LastState){ /* New reading */
-      switch(CurrentState){
-        case 0 :
-                if (LastState == 1){
-                  Statemsg = 0; /* First small block on belt*/
-                 }
-                 else if (LastState == 3){
-                   Statemsg = 1; /* Second small block on belt */
-                 }
-                 break;
-        case 3 : if (LastState == 1){ /* Large block on belt */
-                   Statemsg = 2;
-                 }
-                 break;
-        default :
-                 break;
-      }
-      res = msgQSend(queueSensorC0ID, &Statemsg, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
-      if (res == ERROR){
-        printf("Cannot send sensor 0 input into queue! Terminating...");
-        exit(0);
-      }
-    }
-    LastState = CurrentState;
-    taskDelay(0.25 * sysClkRateGet());
-  }
-}
+    CurrentState0 = readSizeSensors(0);
+    Analyse(CurrentState0, LastState0, belt);
+    LastState0 = CurrentState0;
 
-void CheckSensor1(){
-  char CurrentState = 0;
-  char LastState = 0;
-  char Statemsg;
-  int res;
-  while(1){
+    belt = 1;
     resetSizeSensors(1);
-    CurrentState = readSizeSensors(1);
-    if (CurrentState != LastState){ /* New reading */
-      switch(CurrentState){
-        case 0 :
-                if (LastState == 1){
-                  Statemsg = 0; /* First small block on belt*/
-                 }
-                 else if (LastState == 3){
-                   Statemsg = 1; /* Second small block on belt */
-                 }
-                 break;
-        case 3 : if (LastState == 1){
-                   Statemsg = 2; /* Large block on belt */
-                 }
-                 break;
-        default :
-                 break;
-      }
-      res = msgQSend(queueSensorC1ID, &Statemsg, 1, WAIT_FOREVER, MSG_PRI_NORMAL);
-      if (res == ERROR){
-        printf("Cannot send sensor 0 input into queue! Terminating...");
-        exit(0);
-      }
-    }
-    LastState = CurrentState;
-    taskDelay(0.25 * sysClkRateGet());
+    CurrentState1 = readSizeSensors(1);
+    Analyse(CurrentState1, LastState1, belt);
+    LastState1 = CurrentState1;
+
+    taskDelay(0.05 * sysClkRateGet());
   }
 }
 
 int main(void){
   startMotor();
-  int CheckSensor0_id;
-  int CheckSensor1_id;
-  int MotorController0_id;
-  int MotorController1_id;
-  int Interface_id;
-  int AnalyseConveyor0_id;
-  int AnalyseConveyor1_id;
-  int CheckEndSensor0_id;
-  int CheckEndSensor1_id;
 
-  BlockTimePointer0 = 0;
-  BlockTimePointer1 = 0;
-
-  timer_T1_ID = wdCreate();
-  timer_T2_ID = wdCreate();
-  timer_T3_ID = wdCreate();
-  timer_T4_ID = wdCreate();
-  timer_T5_ID = wdCreate();
-  timer_T6_ID = wdCreate();
-
-  queueSensorC0ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
-  if (queueSensorC0ID == NULL){
-    printf("Cannot create message queue! Terminating...");
-    exit(0);
-  }
-
-  queueSensorC1ID = msgQCreate(100, 1, MSG_Q_PRIORITY);
-  if (queueSensorC1ID == NULL){
-    printf("Cannot create message queue! Terminating...");
-    exit(0);
-  }
-
-  MotorStateSemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
-  if (MotorStateSemID == NULL){
-    printf("Cannot create analysis semaphore! Terminating...");
-    exit(0);
-  }
   CountSemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
   if (CountSemID == NULL){
     printf("Cannot create analysis semaphore! Terminating...");
@@ -604,65 +263,27 @@ int main(void){
     printf("Cannot create analysis semaphore! Terminating...");
     exit(0);
   }
-  BlockTimeSemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
-  if (BlockTimeSemID == NULL){
-    printf("Cannot create analysis semaphore! Terminating...");
-    exit(0);
-  }
-  Timer0SemID = semBCreate(SEM_Q_FIFO, SEM_EMPTY);
-  if (Timer0SemID == NULL){
-    printf("Cannot create analysis semaphore! Terminating...");
-    exit(0);
-  }
-  Timer1SemID = semBCreate(SEM_Q_FIFO, SEM_EMPTY);
-  if (Timer0SemID == NULL){
-    printf("Cannot create analysis semaphore! Terminating...");
-    exit(0);
-  }
-  CountSensor0SemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
-  if (CountSensor0SemID == NULL){
-    printf("Cannot create analysis semaphore! Terminating...");
-    exit(0);
-  }
-  CountSensor1SemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
-  if (CountSensor0SemID == NULL){
-    printf("Cannot create analysis semaphore! Terminating...");
-    exit(0);
-  }
+
   /* Set up tasks*/
-  CheckSensor0_id = taskSpawn("CheckSensor0", 95, 0, 20000,
-                      (FUNCPTR)CheckSensor0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+  CheckSensor_id = taskSpawn("CheckSensor", 95, 0, 20000,
+                      (FUNCPTR)CheckSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
-  CheckSensor1_id = taskSpawn("CheckSensor1", 95, 0, 20000,
-                      (FUNCPTR)CheckSensor1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
-  CheckEndSensor0_id = taskSpawn("CheckEndSensor0", 96, 0, 20000,
-                      (FUNCPTR)CheckEndSensor0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
-  CheckEndSensor1_id = taskSpawn("CheckEndSensor1", 96, 0, 20000,
-                      (FUNCPTR)CheckEndSensor1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+  /*CheckEndSensor_id = taskSpawn("CheckEndSensor", 96, 0, 20000,
+                      (FUNCPTR)CheckEndSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); */
 
   Interface_id = taskSpawn("Interface", 97, 0, 20000,
                       (FUNCPTR)Interface, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
-  AnalyseConveyor0_id = taskSpawn("AnalyseConveyor0", 96, 0, 2000,
-                        (FUNCPTR)AnalyseConveyor0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+  /* Set up timer to open gates */
+  	openGatesTimerID = wdCreate();
 
-  AnalyseConveyor1_id = taskSpawn("AnalyseConveyor1", 96, 0, 2000,
-                        (FUNCPTR)AnalyseConveyor1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
-  MotorController0_id = taskSpawn("MotorController0", 96, 0, 20000,
-                      (FUNCPTR)MotorController0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
-  MotorController1_id = taskSpawn("MotorController1", 96, 0, 20000,
-                      (FUNCPTR)MotorController1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-  /*printf("Welcome to block conveyor 4.0! \n" "Press: \n" q to quit \n l to show number of large blocks counted \n s to show number of small blocks detected \n o to show number of small blocks counted \n p to show number of small blocks detected \n k to reset the large block counter \n a to reset the small block counter \n z to show number of large blocks detected on conveyor 0 \n x to show number of large blocks detected on conveyor 1 \n h to see this message again \n ");*/
+  printf("Welcome to block conveyor 4.0! \n"
+		  "Press: \n" "q to quit \n" "l to show number of large blocks counted \n"
+		  "s to show number of small blocks detected \n"
+		  "o to show number of large blocks counted \n"
+		  "p to show number of small blocks detected \n"
+		  "k to reset the large block counter \n" "a to reset the small block counter \n"
+		  "z to show number of large blocks detected on conveyor 0 \n"
+		  "x to show number of large blocks detected on conveyor 1 \n"
+		  "h to see this message again \n ");
 }
-
-/* Motor control 1 UP timer does not execute - why? Check timers */
-/* Blocktimepointer1 does not reset */
-/* open gate timer executed too many times */
-/* Count sensor no longer sensing */
-/* timers not signalling properly to gates */
-/* consider priorities */
-/* reads first block but gates dont work on any subsequent blocks */
