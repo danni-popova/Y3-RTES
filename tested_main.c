@@ -9,11 +9,10 @@
 #include "time.h"
 
 int CheckSensor_id, Interface_id /*CheckEndSensor_id*/;
-char GateState, MissCount;
+char GateState;
 char SmallCount[2] = {0, 0};
 char LargeCount[2] = {0, 0};
 char LargeCountSensor[2] = {0, 0};
-char onBelt[2] = {0, 0};
 SEM_ID CountSemID;
 SEM_ID EndCountSemID;
 SEM_ID CountSensorSemID;
@@ -33,35 +32,41 @@ WDOG_ID createCountTimer(void){ /* Create a new timer for close gate operation *
 
 void Interface(void){
   char c;
+  char TotalDetected;
+  char TotalCounted;
+  char Missed;
   while(1){
     c = getchar();
+    TotalDetected = LargeCountSensor[0] + LargeCountSensor[1];
+    TotalCounted = LargeCount[0] + LargeCount[1];
+    Missed = TotalCounted - TotalDetected;
     switch(c){
        case 'q':
-                printf("Shutting down... \n");
+                printf("\n" "Shutting down... \n");
                 taskDelete(CheckSensor_id);
-                /*taskDelete(CheckEndSensor_id);*/
                 stopMotor();
-                printf("Goodbye! \n");
+                printf("\n" "Goodbye! \n");
                 taskDelete(Interface_id);
-      case 'l':
-    	  	  	if (MissCount > 0){
-    	  	  		printf("Large block has been missed! \n");
+                break;
+       case 'c':
+    	  	  	if (Missed > 0){
+    	  	  		printf("\n" "ERROR : Large block has been missed! \n");
     	  	  	}
-                printf("Total Large blocks COUNTED on Conveyor 0 : %d \n", LargeCount[0]);
+                printf("Large blocks COUNTED on Conveyor 0 : %d \n", LargeCount[0]);
                 break;
-      case 's':
-                printf("Total Small blocks DETECTED on Conveyor 0 : %d \n", SmallCount[0]);
+       case 'v':
+                printf("Small blocks DETECTED on Conveyor 0 : %d \n", SmallCount[0]);
                 break;
-      case 'o':
-    	  	    if (MissCount > 0){
-    	  	    	printf("Large block has been missed! \n");
+       case 'b':
+    	  	    if (Missed > 0){
+    	  	    	printf("ERROR : Large block has been missed! \n");
     	      	}
-                printf("Total Large blocks COUNTED on Conveyor 1 : %d \n", LargeCount[1]);
+                printf("Large blocks COUNTED on Conveyor 1 : %d \n", LargeCount[1]);
                 break;
-      case 'p':
-                printf("Total Small blocks DETECTED on Conveyor 1 : %d \n", SmallCount[1]);
+       case 'n':
+                printf("Small blocks DETECTED on Conveyor 1 : %d \n", SmallCount[1]);
                 break;
-      case 'k':
+       case 'w':
                 semTake(CountSemID, WAIT_FOREVER);
                 printf("Reset Large block count/detected value to 0 \n");
                 LargeCount[0] = 0;
@@ -70,31 +75,42 @@ void Interface(void){
                 semTake(EndCountSemID, WAIT_FOREVER);
                 LargeCountSensor[0] = 0;
                 LargeCountSensor[1] = 0;
-                MissCount = 0;
                 semGive(EndCountSemID);
                 break;
-      case 'a':
+       case 'e':
                 semTake(CountSemID, WAIT_FOREVER);
                 printf("Reset Small block detected value to 0 \n");
                 SmallCount[0] = 0;
                 SmallCount[1] = 0;
                 semGive(CountSemID);
                 break;
-      case 'z':
-                printf("Large block DETECTED for conveyor 0: %d \n", LargeCountSensor[0]);
+       case 'z':
+                printf("Large blocks DETECTED for conveyor 0: %d \n", LargeCountSensor[0]);
                 break;
-      case 'x':
-                printf("Large block DETECTED for conveyor 1: %d \n", LargeCountSensor[1]);
+       case 'x':
+                printf("Large blocks DETECTED for conveyor 1: %d \n", LargeCountSensor[1]);
                 break;
-      case 'h': printf("Welcome to block conveyor 4.0! \n"
-    		  "Press: \n" "q to quit \n" "l to show number of large blocks counted \n"
-    		  "s to show number of small blocks detected \n"
-    		  "o to show number of large blocks counted \n"
-    		  "p to show number of small blocks detected \n"
-    		  "k to reset the large block counter \n" "a to reset the small block counter \n"
+       case 'l':
+                printf("\n" "TOTAL Large blocks : %d \n", TotalDetected);
+                if (Missed > 0){
+                	printf("TOTAL Large blocks MISSED : %d \n", Missed);
+                }
+                break;
+       case 'h': printf("--------------------------------------------------------------- \n"
+    		  "Welcome to block conveyor 4.0! \n"
+    		  "Press: \n"
+    		  "q to quit \n"
+    		  "l to show TOTAL large blocks detected and missed \n"
+    		  "c to show number of large blocks COUNTED on Conveyor 0 \n"
+    		  "v to show number of small blocks DETECTED on Conveyor 0 \n"
+    		  "b to show number of large blocks COUNTED on Conveyor 1 \n"
+    		  "n to show number of small blocks DETECTED on Conveyor 1 \n"
+    		  "w to reset the large block counter \n"
+    		  "e to reset the small block counter \n"
     		  "z to show number of large blocks detected on conveyor 0 \n"
     		  "x to show number of large blocks detected on conveyor 1 \n"
-    		  "h to see this message again \n ");
+    		  "h to see this message again \n "
+    		  "--------------------------------------------------------------- \n");
       default: break;
     }
 
@@ -102,93 +118,60 @@ void Interface(void){
 }
 
  void CheckEndSensor(char belt){
-    resetCountSensor(belt);
+	resetCountSensor(belt);
     char Count = readCountSensor(belt);
-    if (belt == 0){
-    	if (Count == 1){
-    		semTake(EndCountSemID, WAIT_FOREVER);
-        	LargeCountSensor[belt] ++;
-        	semGive(EndCountSemID);
-    	}
-    	else{
-    		semTake(EndCountSemID, WAIT_FOREVER);
-    		MissCount ++;
-    		semGive(EndCountSemID);
-    	}
-    }
-    else if (belt == 1){
-    	if (Count == 1){
-    		semTake(EndCountSemID, WAIT_FOREVER);
-    		LargeCountSensor[belt] ++;
-    		semGive(EndCountSemID);
-    	}
-    	else{
-    		semTake(EndCountSemID, WAIT_FOREVER);
-    		MissCount ++;
-    		semGive(EndCountSemID);
-    	}
+    if (Count == 1){
+    	semTake(EndCountSemID, WAIT_FOREVER);
+    	LargeCountSensor[belt] ++;
+    	semGive(EndCountSemID);
     }
 }
 
 void openGates(char belt){
 	setGates(0);
 	GateState = 0;
-	onBelt[belt] = 0;
 }
 
 void closeGates(char belt){
     char NextState;
-    onBelt[belt] ++;
-    if (belt == 1){
-      switch (GateState){
-        case 0 : NextState = 2;
-                 setGates(2);
-                 break;
-        case 1 : NextState = 3;
-                 setGates(3);
-                 break;
-        case 2 : NextState = 2;
-                 setGates(2);
-                 break;
-        case 3 : if (onBelt[0] > 0){
-        		 	 NextState = 3;
-        		 	 setGates(3);
-        		 }
-        	     else{
-        	    	 NextState = 2;
-        	    	 setGates(2);
-        	     }
-                 break;
-        default : NextState = 0;
-                  setGates(0);
-                 break;
-      }
-    }
-    else if (belt == 0){
-      switch (GateState){
-        case 0 : NextState = 1;
-                 setGates(1);
-                 break;
-        case 1 : NextState = 1;
-                 setGates(1);
-                 break;
-        case 2 : NextState = 3;
-                 setGates(3);
-                 break;
-        case 3 : if (onBelt[1] > 0){
-        		 	 NextState = 3;
-        		 	 setGates(3);
-        		 }
-        		 else{
-        			 NextState = 1;
-        			 setGates(1);
-        		 }
-                 break;
-        default : NextState = 0;
-                  setGates(0);
-                  break;
-      }
-    }
+        if (belt == 1){
+          switch (GateState){
+            case 0 : NextState = 2;
+                     setGates(2);
+                     break;
+            case 1 : NextState = 3;
+                     setGates(3);
+                     break;
+            case 2 : NextState = 2;
+                     setGates(2);
+                     break;
+            case 3 : NextState = 3;
+            		 setGates(3);
+                     break;
+            default : NextState = 0;
+                      setGates(0);
+                     break;
+          }
+        }
+        else if (belt == 0){
+          switch (GateState){
+            case 0 : NextState = 1;
+                     setGates(1);
+                     break;
+            case 1 : NextState = 1;
+                     setGates(1);
+                     break;
+            case 2 : NextState = 3;
+                     setGates(3);
+                     break;
+            case 3 : NextState = 3;
+            		 setGates(3);
+                     break;
+            default : NextState = 0;
+                      setGates(0);
+                      break;
+          }
+        }
     GateState = NextState;
     wdStart(openGatesTimerID, 1.5 * sysClkRateGet(), (FUNCPTR)openGates, belt);
 }
@@ -198,14 +181,14 @@ void Analyse(CurrentState, LastState, belt){
     switch(CurrentState){
       case 0 :
               if (LastState == 1){ /* First small block on belt*/
-                printf("Close gate timer set for conveyor %d \n", belt);
+            	printf("\n" "Small block detected for conveyor %d! \n", belt);
                 wdStart(createTimer(), 3 * sysClkRateGet(), (FUNCPTR)closeGates, belt);
                 semTake(CountSemID, WAIT_FOREVER);
                 SmallCount[belt] ++;
                 semGive(CountSemID);
               }
               else if (LastState == 3){  /* Second small block on belt */
-                printf("Second small block detected for conveyor %d! \n", belt);
+                printf("\n" "Second small block detected for conveyor %d! \n", belt);
                 wdStart(createTimer(), 3 * sysClkRateGet(), (FUNCPTR)closeGates, belt);
                 semTake(CountSemID, WAIT_FOREVER);
                 SmallCount[belt] ++;
@@ -214,8 +197,8 @@ void Analyse(CurrentState, LastState, belt){
               break;
       case 3 :
               if (LastState == 1){ /* Large block on belt */
-            	wdStart(createCountTimer(), 5 * sysClkRateGet(), (FUNCPTR)CheckEndSensor, belt);
-            	printf("Large block detected on conveyor %d! \n", belt);
+            	wdStart(createCountTimer(), 4 * sysClkRateGet(), (FUNCPTR)CheckEndSensor, belt);
+            	printf("\n" "Large block detected on conveyor %d! \n", belt);
                 semTake(CountSemID, WAIT_FOREVER);
                 LargeCount[belt] ++;
                 semGive(CountSemID);
@@ -245,7 +228,7 @@ void CheckSensor(){
     CurrentState1 = readSizeSensors(1);
     Analyse(CurrentState1, LastState1, belt);
     LastState1 = CurrentState1;
-
+    /* Delay task slightly to allow other tasks to run */
     taskDelay(0.05 * sysClkRateGet());
   }
 }
@@ -268,9 +251,6 @@ int main(void){
   CheckSensor_id = taskSpawn("CheckSensor", 95, 0, 20000,
                       (FUNCPTR)CheckSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
-  /*CheckEndSensor_id = taskSpawn("CheckEndSensor", 96, 0, 20000,
-                      (FUNCPTR)CheckEndSensor, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); */
-
   Interface_id = taskSpawn("Interface", 97, 0, 20000,
                       (FUNCPTR)Interface, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
@@ -278,12 +258,17 @@ int main(void){
   	openGatesTimerID = wdCreate();
 
   printf("Welcome to block conveyor 4.0! \n"
-		  "Press: \n" "q to quit \n" "l to show number of large blocks counted \n"
-		  "s to show number of small blocks detected \n"
-		  "o to show number of large blocks counted \n"
-		  "p to show number of small blocks detected \n"
-		  "k to reset the large block counter \n" "a to reset the small block counter \n"
+		  "Press: \n"
+		  "q to quit \n"
+		  "l to show TOTAL large blocks detected and missed \n"
+		  "c to show number of large blocks counted \n"
+		  "v to show number of small blocks detected \n"
+		  "b to show number of large blocks counted \n"
+		  "n to show number of small blocks detected \n"
+		  "w to reset the large block counter \n"
+		  "e to reset the small block counter \n"
 		  "z to show number of large blocks detected on conveyor 0 \n"
 		  "x to show number of large blocks detected on conveyor 1 \n"
-		  "h to see this message again \n ");
+		  "h to see this message again \n "
+		  "--------------------------------------------------------------- \n");
 }
