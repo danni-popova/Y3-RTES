@@ -8,14 +8,22 @@
 #include "wdLib.h"
 #include "time.h"
 
-int CheckSensor_id, Interface_id /*CheckEndSensor_id*/;
+int CheckSensor_id, Interface_id;
+
+/* Varibale to check and update state of gates */
 char GateState;
+
+/* Variables to hold number of detected blocks */
 char SmallCount[2] = {0, 0};
 char LargeCount[2] = {0, 0};
 char LargeCountSensor[2] = {0, 0};
+
+/* Semaphores for access control of global variables */
 SEM_ID CountSemID;
 SEM_ID EndCountSemID;
 SEM_ID CountSensorSemID;
+
+/* Timer ID for opening gates */
 WDOG_ID openGatesTimerID;
 
 WDOG_ID createTimer(void){ /* Create a new timer for close gate operation */
@@ -30,20 +38,27 @@ WDOG_ID createCountTimer(void){ /* Create a new timer for close gate operation *
 	return operateCountTimer;
 }
 
-void Interface(void){
+void Interface(void){ /* Single key press interface */
   char c;
   char TotalDetected;
   char TotalCounted;
   char Missed;
+  
   while(1){
     c = getchar();
+    
+    /* Calculate total number of blocks */
     TotalDetected = LargeCountSensor[0] + LargeCountSensor[1];
     TotalCounted = LargeCount[0] + LargeCount[1];
-    Missed = TotalCounted - TotalDetected;
+    Missed = TotalCounted - TotalDetected; /* Missed updates */
+    
     switch(c){
        case 'q':
                 printf("\n" "Shutting down... \n");
                 taskDelete(CheckSensor_id);
+                semDelete(CountSemID);
+                semDelete(EndCountSemID);
+                semDelete(CountSensorSemID);
                 stopMotor();
                 printf("\n" "Goodbye! \n");
                 taskDelete(Interface_id);
@@ -67,17 +82,22 @@ void Interface(void){
                 printf("Small blocks DETECTED on Conveyor 1 : %d \n", SmallCount[1]);
                 break;
        case 'w':
+    	   	   /* Reset large block counter before gates */
                 semTake(CountSemID, WAIT_FOREVER);
                 printf("Reset Large block count/detected value to 0 \n");
                 LargeCount[0] = 0;
                 LargeCount[1] = 0;
                 semGive(CountSemID);
+                
+                /* Reset large block counter after gates */
                 semTake(EndCountSemID, WAIT_FOREVER);
                 LargeCountSensor[0] = 0;
                 LargeCountSensor[1] = 0;
                 semGive(EndCountSemID);
+                
                 break;
        case 'e':
+    	   	   /* Reset small block counter before gates */
                 semTake(CountSemID, WAIT_FOREVER);
                 printf("Reset Small block detected value to 0 \n");
                 SmallCount[0] = 0;
@@ -92,7 +112,7 @@ void Interface(void){
                 break;
        case 'l':
                 printf("\n" "TOTAL Large blocks : %d \n", TotalDetected);
-                if (Missed > 0){
+				if (Missed > 0){
                 	printf("TOTAL Large blocks MISSED : %d \n", Missed);
                 }
                 break;
@@ -117,7 +137,7 @@ void Interface(void){
   }
 }
 
- void CheckEndSensor(char belt){
+ void CheckEndSensor(char belt){ /* Timer callback to read count sensor */
 	resetCountSensor(belt);
     char Count = readCountSensor(belt);
     if (Count == 1){
@@ -127,12 +147,12 @@ void Interface(void){
     }
 }
 
-void openGates(char belt){
+void openGates(char belt){	/* Timer callback to open gates after small block */
 	setGates(0);
 	GateState = 0;
 }
 
-void closeGates(char belt){
+void closeGates(char belt){ /* Timer callback to control gates */
     char NextState;
         if (belt == 1){
           switch (GateState){
@@ -172,8 +192,11 @@ void closeGates(char belt){
                       break;
           }
         }
+	/* Update state */
     GateState = NextState;
-    wdStart(openGatesTimerID, 1.5 * sysClkRateGet(), (FUNCPTR)openGates, belt);
+    
+    /* Start countdown to re-open gates */
+    wdStart(openGatesTimerID, 1.7 * sysClkRateGet(), (FUNCPTR)openGates, belt);
 }
 
 void Analyse(CurrentState, LastState, belt){
@@ -182,14 +205,14 @@ void Analyse(CurrentState, LastState, belt){
       case 0 :
               if (LastState == 1){ /* First small block on belt*/
             	printf("\n" "Small block detected for conveyor %d! \n", belt);
-                wdStart(createTimer(), 3 * sysClkRateGet(), (FUNCPTR)closeGates, belt);
+                wdStart(createTimer(), 2.8 * sysClkRateGet(), (FUNCPTR)closeGates, belt);
                 semTake(CountSemID, WAIT_FOREVER);
                 SmallCount[belt] ++;
                 semGive(CountSemID);
               }
               else if (LastState == 3){  /* Second small block on belt */
                 printf("\n" "Second small block detected for conveyor %d! \n", belt);
-                wdStart(createTimer(), 3 * sysClkRateGet(), (FUNCPTR)closeGates, belt);
+                wdStart(createTimer(), 2.8 * sysClkRateGet(), (FUNCPTR)closeGates, belt);
                 semTake(CountSemID, WAIT_FOREVER);
                 SmallCount[belt] ++;
                 semGive(CountSemID);
@@ -197,8 +220,10 @@ void Analyse(CurrentState, LastState, belt){
               break;
       case 3 :
               if (LastState == 1){ /* Large block on belt */
-            	wdStart(createCountTimer(), 4 * sysClkRateGet(), (FUNCPTR)CheckEndSensor, belt);
+            	wdStart(createCountTimer(), 4.5 * sysClkRateGet(), (FUNCPTR)CheckEndSensor, belt);
             	printf("\n" "Large block detected on conveyor %d! \n", belt);
+
+              	/* Update large block counter */
                 semTake(CountSemID, WAIT_FOREVER);
                 LargeCount[belt] ++;
                 semGive(CountSemID);
@@ -217,25 +242,28 @@ void CheckSensor(){
   char LastState1 = 0;
   char belt = 0;
   while(1){
+	  /* Read sensors on belt 0 */
     belt = 0;
     resetSizeSensors(0);
     CurrentState0 = readSizeSensors(0);
     Analyse(CurrentState0, LastState0, belt);
     LastState0 = CurrentState0;
-
+    
+    /* Read sensors on belt 1 */
     belt = 1;
     resetSizeSensors(1);
     CurrentState1 = readSizeSensors(1);
     Analyse(CurrentState1, LastState1, belt);
     LastState1 = CurrentState1;
+    
     /* Delay task slightly to allow other tasks to run */
-    taskDelay(0.05 * sysClkRateGet());
+    taskDelay(0.1 * sysClkRateGet());
   }
 }
 
 int main(void){
   startMotor();
-
+  
   CountSemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
   if (CountSemID == NULL){
     printf("Cannot create analysis semaphore! Terminating...");
