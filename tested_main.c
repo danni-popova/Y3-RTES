@@ -129,6 +129,19 @@ void Interface(void){ /* Single key press interface */
     	   	    	pause = 0;
     	   	    }
     	   	    break;
+       case 'i':
+    	   	    printf("Checking gate operation, Please wait... \n");
+    	   	    setGates(1);
+    	   	    taskDelay(1 * sysClkRateGet());
+    	   	    setGates(2);
+    	   	    taskDelay(1 * sysClkRateGet());
+    	   	    setGates(3);
+    	   	    taskDelay(1 * sysClkRateGet());
+    	   	    setGates(0);
+    	   	    taskDelay(1 * sysClkRateGet());
+    	   	    printf("Test complete! \n");
+    	   	    break;
+
        case 'h': printf("--------------------------------------------------------------- \n"
     		  "Welcome to block conveyor 4.0! \n"
     		  "Press: \n"
@@ -142,7 +155,8 @@ void Interface(void){ /* Single key press interface */
     		  "e to reset the small block counter \n"
     		  "z to show number of large blocks detected on conveyor 0 \n"
     		  "x to show number of large blocks detected on conveyor 1 \n"
-    		  "t to pause/start the belt"
+    		  "t to pause/start the belt \n"
+    		  "i to test the gate control \n"
     		  "h to see this message again \n "
     		  "--------------------------------------------------------------- \n");
       default: break;
@@ -314,7 +328,8 @@ int main(void){
 		  "e to reset the small block counter \n"
 		  "z to show number of large blocks detected on conveyor 0 \n"
 		  "x to show number of large blocks detected on conveyor 1 \n"
-		  "t to pause/start the belt"
+		  "t to pause/start the belt \n"
+		  "i to test the gate control \n"
 		  "h to see this message again \n "
 		  "--------------------------------------------------------------- \n");
 }
