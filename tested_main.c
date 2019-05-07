@@ -286,7 +286,7 @@ void CheckSensor(){
     LastState1 = CurrentState1;
 
     /* Delay task slightly to allow other tasks to run */
-    taskDelay(0.05 * sysClkRateGet());
+    taskDelay(0.03 * sysClkRateGet());
 
 
   }
