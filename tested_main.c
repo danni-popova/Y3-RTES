@@ -21,7 +21,6 @@ char LargeCountSensor[2] = {0, 0};
 /* Semaphores for access control of global variables */
 SEM_ID CountSemID;
 SEM_ID EndCountSemID;
-SEM_ID CountSensorSemID;
 
 /* Timer ID for opening gates */
 WDOG_ID openGatesTimerID;
@@ -43,23 +42,22 @@ void Interface(void){ /* Single key press interface */
   char TotalDetected;
   char TotalCounted;
   char Missed;
-
+  
   while(1){
     c = getchar();
-
+    
     /* Calculate total number of blocks */
     TotalDetected = LargeCountSensor[0] + LargeCountSensor[1];
     TotalCounted = LargeCount[0] + LargeCount[1];
     Missed = TotalCounted - TotalDetected; /* Missed updates */
     char pause;
-
+    
     switch(c){
        case 'q':
                 printf("\n" "Shutting down... \n");
                 taskDelete(CheckSensor_id);
                 semDelete(CountSemID);
                 semDelete(EndCountSemID);
-                semDelete(CountSensorSemID);
                 stopMotor();
                 printf("\n" "Goodbye! \n");
                 taskDelete(Interface_id);
@@ -89,13 +87,13 @@ void Interface(void){ /* Single key press interface */
                 LargeCount[0] = 0;
                 LargeCount[1] = 0;
                 semGive(CountSemID);
-
+                
                 /* Reset large block counter after gates */
                 semTake(EndCountSemID, WAIT_FOREVER);
                 LargeCountSensor[0] = 0;
                 LargeCountSensor[1] = 0;
                 semGive(EndCountSemID);
-
+                
                 break;
        case 'e':
     	   	   /* Reset small block counter before gates */
@@ -130,7 +128,7 @@ void Interface(void){ /* Single key press interface */
     	   	    }
     	   	    break;
        case 'i':
-    	   	    printf("Checking gate operation, Please wait... \n");
+    	   	    printf("Checking hardware operation, Please wait... \n");
     	   	    setGates(1);
     	   	    taskDelay(1 * sysClkRateGet());
     	   	    setGates(2);
@@ -139,9 +137,47 @@ void Interface(void){ /* Single key press interface */
     	   	    taskDelay(1 * sysClkRateGet());
     	   	    setGates(0);
     	   	    taskDelay(1 * sysClkRateGet());
+    	   	    printf("Testing sensors...\n");
+    	   	    printf("Please place a block in front of Conveyor 0 Detection Sensor\n");
+    	   	    int i;
+    	   	    for(i = 0; i<100000000; i++){
+    	   	    	resetSizeSensors(0);
+    	   	    	char test = readSizeSensors(0);
+    	   	    	if (test == 1){
+    	   	    		printf("Conveyor 0 Detection Sensor Working");
+    	   	    		break;
+    	   	    	}
+    	   	    }
+    	   	    printf("Please place a block in front of Conveyor 1 Detection Sensor\n");
+    	   	    for(i = 0; i<100000000; i++){
+    	   	    	resetSizeSensors(1);
+    	   	    	char test = readSizeSensors(1);
+    	   	    	if (test == 1){
+    	   	    		printf("Conveyor 1 Detection Sensor Working");
+    	   	    		break;
+    	   	    	}
+    	   	    }
+    	   	    printf("Please place a block in front of Conveyor 0 Count Sensor\n");
+    	   	    for(i = 0; i<100000000; i++){
+    	   	    	resetCountSensor(0);
+    	   	    	char test = readCountSensor(0);
+    	   	    	if (test == 1){
+    	   	    		printf("Conveyor 0 Count Sensor Working");
+    	   	    		break;
+    	   	    	}
+    	   	    }
+    	   	    printf("Please place a block in front of Conveyor 1 Count Sensor\n");
+    	   	    for(i = 0; i<100000000; i++){
+    	   	    	resetCountSensor(0);
+    	   	    	char test = readCountSensor(0);
+    	   	    	if (test == 1){
+    	   	    		printf("Conveyor 1 Count Sensor Working");
+    	   	    		break;
+    	   	    	}
+    	   	    }
     	   	    printf("Test complete! \n");
     	   	    break;
-
+    	   	    
        case 'h': printf("--------------------------------------------------------------- \n"
     		  "Welcome to block conveyor 4.0! \n"
     		  "Press: \n"
@@ -156,7 +192,7 @@ void Interface(void){ /* Single key press interface */
     		  "z to show number of large blocks detected on conveyor 0 \n"
     		  "x to show number of large blocks detected on conveyor 1 \n"
     		  "t to pause/start the belt \n"
-    		  "i to test the gate control \n"
+    		  "i to test the hardware \n"
     		  "h to see this message again \n "
     		  "--------------------------------------------------------------- \n");
       default: break;
@@ -223,7 +259,7 @@ void closeGates(char belt){ /* Timer callback to control gates */
         }
 	/* Update state */
     GateState = NextState;
-
+    
     /* Start countdown to re-open gates */
     wdStart(openGatesTimerID, 1.7 * sysClkRateGet(), (FUNCPTR)openGates, belt);
 }
@@ -270,7 +306,7 @@ void CheckSensor(){
   char CurrentState1 = 0;
   char LastState1 = 0;
   char belt = 0;
-
+  
   while(1){
 	  /* Read sensors on belt 0 */
     belt = 0;
@@ -284,17 +320,17 @@ void CheckSensor(){
     CurrentState1 = readSizeSensors(1);
     Analyse(CurrentState1, LastState1, belt);
     LastState1 = CurrentState1;
-
+    
     /* Delay task slightly to allow other tasks to run */
     taskDelay(0.03 * sysClkRateGet());
-
+    
 
   }
 }
 
 int main(void){
   startMotor();
-
+  
   CountSemID = semBCreate(SEM_Q_FIFO, SEM_FULL);
   if (CountSemID == NULL){
     printf("Cannot create analysis semaphore! Terminating...");
@@ -329,7 +365,7 @@ int main(void){
 		  "z to show number of large blocks detected on conveyor 0 \n"
 		  "x to show number of large blocks detected on conveyor 1 \n"
 		  "t to pause/start the belt \n"
-		  "i to test the gate control \n"
+		  "i to test the hardware \n"
 		  "h to see this message again \n "
 		  "--------------------------------------------------------------- \n");
 }
