@@ -17,6 +17,13 @@ char GateState;
 char SmallCount[2] = {0, 0};
 char LargeCount[2] = {0, 0};
 char LargeCountSensor[2] = {0, 0};
+double closeGateTime;
+double openGateTime;
+int largeblockTime;
+char CalibrationMode;
+struct timespec start;
+struct timespec stop;
+struct timespec res;
 
 /* Semaphores for access control of global variables */
 SEM_ID CountSemID;
@@ -128,6 +135,7 @@ void Interface(void){ /* Single key press interface */
     	   	    }
     	   	    break;
        case 'i':
+    	   	    CalibrationMode = 1;
     	   	    printf("Checking hardware operation, Please wait... \n");
     	   	    setGates(1);
     	   	    taskDelay(1 * sysClkRateGet());
@@ -138,46 +146,54 @@ void Interface(void){ /* Single key press interface */
     	   	    setGates(0);
     	   	    taskDelay(1 * sysClkRateGet());
     	   	    printf("Testing sensors...\n");
-    	   	    printf("Please place a block in front of Conveyor 0 Detection Sensor\n");
+    	   	    printf("Please place a block in front of Conveyor 0 Detection Sensor \n");
     	   	    int i;
     	   	    for(i = 0; i<100000000; i++){
     	   	    	resetSizeSensors(0);
     	   	    	char test = readSizeSensors(0);
     	   	    	if (test == 1){
-    	   	    		printf("Conveyor 0 Detection Sensor Working");
+    	   	    		printf("Conveyor 0 Detection Sensor Working \n");
     	   	    		break;
     	   	    	}
     	   	    }
-    	   	    printf("Please place a block in front of Conveyor 1 Detection Sensor\n");
+    	   	    printf("Please place a block in front of Conveyor 1 Detection Sensor \n");
     	   	    for(i = 0; i<100000000; i++){
     	   	    	resetSizeSensors(1);
     	   	    	char test = readSizeSensors(1);
     	   	    	if (test == 1){
-    	   	    		printf("Conveyor 1 Detection Sensor Working");
+    	   	    		printf("Conveyor 1 Detection Sensor Working \n");
     	   	    		break;
     	   	    	}
     	   	    }
-    	   	    printf("Please place a block in front of Conveyor 0 Count Sensor\n");
+    	   	    printf("Please place a block in front of Conveyor 0 Count Sensor \n");
     	   	    for(i = 0; i<100000000; i++){
     	   	    	resetCountSensor(0);
     	   	    	char test = readCountSensor(0);
     	   	    	if (test == 1){
-    	   	    		printf("Conveyor 0 Count Sensor Working");
+    	   	    		printf("Conveyor 0 Count Sensor Working \n");
     	   	    		break;
     	   	    	}
     	   	    }
-    	   	    printf("Please place a block in front of Conveyor 1 Count Sensor\n");
+    	   	    printf("Please place a block in front of Conveyor 1 Count Sensor \n");
     	   	    for(i = 0; i<100000000; i++){
     	   	    	resetCountSensor(0);
     	   	    	char test = readCountSensor(0);
     	   	    	if (test == 1){
-    	   	    		printf("Conveyor 1 Count Sensor Working");
+    	   	    		printf("Conveyor 1 Count Sensor Working \n");
     	   	    		break;
     	   	    	}
     	   	    }
     	   	    printf("Test complete! \n");
+    	   	    CalibrationMode = 0;
     	   	    break;
-    	   	    
+       case 'a':
+    	   	    CalibrationMode = 1;
+    	   	    printf("Calibrating hardware...\n"
+    	   	    		"Please place a large block on Conveyor 0 \n");
+    	   	    Calibration();
+    	   	    printf("Calibration complete \n");
+    	   	    CalibrationMode = 0;
+    	   	    break;
        case 'h': printf("--------------------------------------------------------------- \n"
     		  "Welcome to block conveyor 4.0! \n"
     		  "Press: \n"
@@ -193,12 +209,70 @@ void Interface(void){ /* Single key press interface */
     		  "x to show number of large blocks detected on conveyor 1 \n"
     		  "t to pause/start the belt \n"
     		  "i to test the hardware \n"
+    		  "a to calibrate the belt \n"
     		  "h to see this message again \n "
     		  "--------------------------------------------------------------- \n");
       default: break;
     }
 
   }
+}
+
+void Calibration(void){
+	while(1){
+		/* Keep reading sensors until block is detected */
+		resetSizeSensors(0);
+		char sizeSensorReading = readSizeSensors(0);
+		
+		if(sizeSensorReading != 0){
+			/* Get the Real-Time clock resolution if needed */
+			clock_getres(CLOCK_REALTIME, &res);
+			/* Start timer to measure travel time to size sensor */
+			clock_gettime(CLOCK_REALTIME, &start);
+			
+			printf("Block detected on conveyor belt 0...\n"
+				   "Leave the block on the belt to measure travel to the next sensor\n");
+			/* Break from while loop to detect block */
+			break;
+		}
+	}
+	/* Wait for block to reach count sensor */
+	while(1){
+		resetCountSensor(0);
+		char countSensorReading = readCountSensor(0);
+		
+		/* When block reaches count sensor, stop timer to calculate travel time */
+		if(countSensorReading == 1){
+			/* Stop timer */
+			clock_gettime(CLOCK_REALTIME, &stop);
+			/* Break from while loop to detect block */
+			break;
+		}
+	}
+	printf("Conveyor timing results: \n");
+	printf("\n\n\n\nResolution: %d.%d\n", res.tv_sec, res.tv_nsec);
+	printf("Start: %d.%d\n", start.tv_sec, start.tv_nsec);
+	printf("Stop: %d.%d\n", stop.tv_sec, stop.tv_nsec);
+	/* Keep to int for simpler calculations later */
+	int timetoCountSensor = stop.tv_sec - start.tv_sec;
+	largeblockTime = stop.tv_sec - start.tv_sec;
+	if (timetoCountSensor == 0){
+		/* Avoid dividing by zero */
+		printf("Time is zero! Cancelling Calibration... \n");
+		return;
+	}
+	printf("Time : %d\n", timetoCountSensor);
+	/* Timings for open and close gates worked out by calculating the speed and distance of the belt 
+	 * and using speed = distance/time */
+	/* Distance from size sensors to gates = ~11cm */
+	/* Distance from size sensors to count sensor = 19cm */
+	double speed = 19/timetoCountSensor;
+	closeGateTime = 11/speed;
+	openGateTime = timetoCountSensor - closeGateTime;
+	openGateTime = openGateTime/2; /* Halved to account for small block then large block */
+	printf("closeGateTime = %f\n"
+			"openGateTime = %f \n"
+			"largeblockTime = %d\n", closeGateTime, openGateTime, largeblockTime);
 }
 
  void CheckEndSensor(char belt){ /* Timer callback to read count sensor */
@@ -261,7 +335,7 @@ void closeGates(char belt){ /* Timer callback to control gates */
     GateState = NextState;
     
     /* Start countdown to re-open gates */
-    wdStart(openGatesTimerID, 1.7 * sysClkRateGet(), (FUNCPTR)openGates, belt);
+    wdStart(openGatesTimerID, openGateTime * sysClkRateGet(), (FUNCPTR)openGates, belt);
 }
 
 void Analyse(CurrentState, LastState, belt){
@@ -270,14 +344,14 @@ void Analyse(CurrentState, LastState, belt){
       case 0 :
               if (LastState == 1){ /* First small block on belt*/
             	printf("\n" "Small block detected for conveyor %d! \n", belt);
-                wdStart(createTimer(), 2.8 * sysClkRateGet(), (FUNCPTR)closeGates, belt);
+                wdStart(createTimer(), closeGateTime * sysClkRateGet(), (FUNCPTR)closeGates, belt);
                 semTake(CountSemID, WAIT_FOREVER);
                 SmallCount[belt] ++;
                 semGive(CountSemID);
               }
               else if (LastState == 3){  /* Second small block on belt */
                 printf("\n" "Second small block detected for conveyor %d! \n", belt);
-                wdStart(createTimer(), 2.8 * sysClkRateGet(), (FUNCPTR)closeGates, belt);
+                wdStart(createTimer(), closeGateTime * sysClkRateGet(), (FUNCPTR)closeGates, belt);
                 semTake(CountSemID, WAIT_FOREVER);
                 SmallCount[belt] ++;
                 semGive(CountSemID);
@@ -285,7 +359,7 @@ void Analyse(CurrentState, LastState, belt){
               break;
       case 3 :
               if (LastState == 1){ /* Large block on belt */
-            	wdStart(createCountTimer(), 4.5 * sysClkRateGet(), (FUNCPTR)CheckEndSensor, belt);
+            	wdStart(createCountTimer(), largeblockTime * sysClkRateGet(), (FUNCPTR)CheckEndSensor, belt);
             	printf("\n" "Large block detected on conveyor %d! \n", belt);
 
               	/* Update large block counter */
@@ -308,23 +382,27 @@ void CheckSensor(){
   char belt = 0;
   
   while(1){
-	  /* Read sensors on belt 0 */
-    belt = 0;
-    resetSizeSensors(0);
-    CurrentState0 = readSizeSensors(0);
-    Analyse(CurrentState0, LastState0, belt);
-    LastState0 = CurrentState0;
-    /* Read sensors on belt 1 */
-    belt = 1;
-    resetSizeSensors(1);
-    CurrentState1 = readSizeSensors(1);
-    Analyse(CurrentState1, LastState1, belt);
-    LastState1 = CurrentState1;
+	 if(CalibrationMode == 1){
+	 /* Delay task to allow calibration or hardware testing to execute */
+		 taskDelay(0.5 * sysClkRateGet());
+	 }
+	 else{
+		/* Read sensors on belt 0 */
+		belt = 0;
+    	resetSizeSensors(0);
+    	CurrentState0 = readSizeSensors(0);
+    	Analyse(CurrentState0, LastState0, belt);
+    	LastState0 = CurrentState0;
+    	/* Read sensors on belt 1 */
+    	belt = 1;
+    	resetSizeSensors(1);
+    	CurrentState1 = readSizeSensors(1);
+    	Analyse(CurrentState1, LastState1, belt);
+    	LastState1 = CurrentState1;
     
-    /* Delay task slightly to allow other tasks to run */
-    taskDelay(0.03 * sysClkRateGet());
-    
-
+    	/* Delay task slightly to allow other tasks to run */
+    	taskDelay(0.03 * sysClkRateGet());
+	 }
   }
 }
 
@@ -351,6 +429,10 @@ int main(void){
 
   /* Set up timer to open gates */
   	openGatesTimerID = wdCreate();
+  /* Set up default watchdog timer values */
+  	closeGateTime = 2.7;
+  	openGateTime = 0.6;
+  	largeblockTime = 4;
 
   printf("Welcome to block conveyor 4.0! \n"
 		  "Press: \n"
@@ -366,6 +448,7 @@ int main(void){
 		  "x to show number of large blocks detected on conveyor 1 \n"
 		  "t to pause/start the belt \n"
 		  "i to test the hardware \n"
+		  "a to calibrate the belt \n"
 		  "h to see this message again \n "
 		  "--------------------------------------------------------------- \n");
 }
