@@ -1,3 +1,4 @@
+/* UP781262 UP782716 */
 #include "cinterface.h"
 #include "stdio.h"
 #include "vxWorks.h"
@@ -10,7 +11,7 @@
 
 int CheckSensor_id, Interface_id;
 
-/* Varibale to check and update state of gates */
+/* Variable to check and update state of gates */
 char GateState;
 
 /* Variables to hold number of detected blocks */
